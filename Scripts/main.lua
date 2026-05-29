@@ -1,11 +1,16 @@
+print("[PerformanceTracker] ~>> BOOT: main.lua initiated")
+
 local UEHelpers = require("UEHelpers")
-local progress_hud = require("imgui.in_game_progress_hud")
+local in_game_progress_hud = require("imgui.in_game_progress_hud")
 local results_hud = require("imgui.results_hud")
-local status_hud = require("imgui.status_indicator_hud")
-local _logger = require("log")
+local status_indicator_hud = require("imgui.status_indicator_hud")
+local log = require("utils.log")
 local cfg = require("config")
-local abilities_helper = require("helpers.abilities_helper")
-local helpers = require("helpers.hud_helpers")
+local abilities_catalog = require("domains.abilities_catalog")
+local history_handler = require("handlers.history_handler")
+local hud_utils = require("utils.hud_utils")
+
+print("[PerformanceTracker] ~>> BOOT: All modules loaded successfully")
 
 local pcall, ipairs, type, pairs = pcall, ipairs, type, pairs
 local string_format = string.format
@@ -17,13 +22,22 @@ _G.__SessionAggAccuracy = _G.__SessionAggAccuracy or {
     PerfectHits = 0,
     CurrentAccuracy = 100.0,
     MaxCombo = 0,
+    TotalScore = 0,
     IsFullCombo = true,
+    LastRank = "F", -- Persisted rank for the session
     SongName = "Unknown",
+    SongSeed = 0,
+    SongID = 0,
+    SongHash = "",
     LastMusicTime = 0.0,
     LastActionWasPerfect = false,
     LastActionType = "None",
     GranularStats = {}, -- Stores actionType -> { Total, Perfect }
     IsTrackerVisible = true, -- Persistent visibility preference
+
+    -- Hook Control Flags (Global for hot-reload safety)
+    HooksInjected = false,
+    IsInitialized = false,
 }
 
 --[[ ============ UTILS ============  --]]
@@ -42,14 +56,18 @@ local function ResetSessionTracker()
     state.PerfectHits = 0
     state.CurrentAccuracy = 100.0
     state.MaxCombo = 0
+    state.TotalScore = 0
     state.IsFullCombo = true
     state.SongName = "Unknown"
+    state.SongSeed = 0
+    state.SongID = 0
+    state.SongHash = ""
     state.LastMusicTime = 0.0
     state.LastActionWasPerfect = false
     state.LastActionType = "Reset"
     state.GranularStats = {}
     
-    progress_hud.Update({}, state)
+    in_game_progress_hud.Update({}, state)
     results_hud.Hide()
 end
 
@@ -89,7 +107,7 @@ local function UpdateGlobalAccuracy(isPerfect, musicTime, actionType)
     state.LastMusicTime = musicTime
     state.LastActionType = actionType or "Unknown"
 
-    logf(_logger.debug, "Action: %s | Perfect: %s | Overall Acc: %.2f%%",
+    logf(log.debug, "Action: %s | Perfect: %s | Overall Acc: %.2f%%",
         state.LastActionType, tostring(isPerfect), state.CurrentAccuracy)
 end
 
@@ -103,9 +121,9 @@ local GAME_STATE_PATHS = {
 
 --[[ ============ ABILITIES HOOKS ============  --]]
 local function RegisterCombatHooks()
-    logf(_logger.info, "Initializing Combat Hooks registration...")
-    
-    for abilityKey, data in pairs(abilities_helper.ABILITIES) do
+    logf(log.info, "Initializing Combat Hooks registration...")
+
+    for abilityKey, data in pairs(abilities_catalog.ABILITIES) do
         local hook_path = data.path
         if hook_path and hook_path ~= "" then
             pcall(function()
@@ -132,28 +150,31 @@ local function RegisterCombatHooks()
 end
 
 -- ============ ENGINE CORE ENTRY HOOK ============
-local isAbilitiesHooksInjected = false
 
 local function GameModeEndSongHook()
     local state = _G.__SessionAggAccuracy
 
-    -- Fetch native MaxCombo and SongName
+    -- 1. Fetch native metrics (Combo, Score, Song Metadata)
     pcall(function()
         local PC = UEHelpers.GetPlayerController()
         if PC and PC:IsValid() then
-            -- Max Combo
+            -- Combat Metrics
             local ScoreComp = PC:GetScoreComponent()
             if ScoreComp and ScoreComp:IsValid() then
                 state.MaxCombo = ScoreComp:GetMaxComboCount() or 0
+                state.TotalScore = ScoreComp:GetCombatScore() or 0
             end
 
-            -- Song Name via MusicSubsystem
+            -- Song Metadata via MusicSubsystem
             local musicInsts = FindAllOf("PagodaMusicSubsystem")
             if musicInsts and #musicInsts > 0 then
                 local musicInst = musicInsts[1]
                 local currentSong = musicInst:GetCurrentSong()
                 if currentSong and currentSong:IsValid() then
                     state.SongName = currentSong.SongName:ToString()
+                    state.SongSeed = currentSong.Seed or 0
+                    state.SongID = currentSong.ImportedSongUniqueId or 0
+                    state.SongHash = currentSong.OriginalAudioFileHash:ToString()
                 end
             end
         end
@@ -161,34 +182,43 @@ local function GameModeEndSongHook()
 
     if state.TotalActions == 0 then return end
 
-    logf(_logger.info, "================================================")
-    logf(_logger.info, "           SONG SESSION FINAL STATS             ")
-    logf(_logger.info, "================================================")
-    logf(_logger.info, string_format("SONG: %s", state.SongName))
-    logf(_logger.info, string_format("OVERALL ACCURACY: %.2f%% (%d/%d Hits)", 
-        state.CurrentAccuracy, state.PerfectHits, state.TotalActions))
-    logf(_logger.info, string_format("MAX COMBO: %d (FC: %s)", state.MaxCombo, tostring(state.IsFullCombo)))
-    logf(_logger.info, "================================================")
+    -- 2. Logic: Calculate Final Rank before persistence
+    state.LastRank, _ = results_hud.GetRank(state.CurrentAccuracy, state.TotalActions)
+
+    -- 3. Persistence: Update Song History
+    local isNewPB, pbData = history_handler.UpdateBestRun(state)
+
+    -- 4. Logging
+    logf(log.info, "================================================")
+    logf(log.info, "           SONG SESSION FINAL STATS             ")
+    logf(log.info, "================================================")
+    logf(log.info, string_format("SONG: %s (ID: %d | Seed: %d)", state.SongName, state.SongID, state.SongSeed))
+    logf(log.info, string_format("SCORE: %d %s", state.TotalScore, isNewPB and "[NEW PERSONAL BEST!]" or ""))
+    logf(log.info, string_format("RANK: %s | ACCURACY: %.2f%% (%d/%d Hits)", 
+        state.LastRank, state.CurrentAccuracy, state.PerfectHits, state.TotalActions))
+    logf(log.info, string_format("MAX COMBO: %d (FC: %s)", state.MaxCombo, tostring(state.IsFullCombo)))
+    logf(log.info, "================================================")
 end
 
 local function GameModeEntryPointHook()
-    if not isAbilitiesHooksInjected then
+    local state = _G.__SessionAggAccuracy
+    if not state.HooksInjected then
         RegisterCombatHooks()
 
         -- Hook Combo changes for Full Combo tracking
         pcall(function()
             RegisterHook(GAME_STATE_PATHS.CombatScorePath .. ":HandleComboCountChanged", function(self, ComboCount)
-                local state = _G.__SessionAggAccuracy
+                local innerState = _G.__SessionAggAccuracy
                 local count = ComboCount:get()
                 
                 -- If combo resets to 0 and we already had some actions, it's not an FC
-                if count == 0 and state.TotalActions > 0 then
-                    state.IsFullCombo = false
+                if count == 0 and innerState.TotalActions > 0 then
+                    innerState.IsFullCombo = false
                 end
             end)
         end)
 
-        isAbilitiesHooksInjected = true
+        state.HooksInjected = true
     end
 
     pcall(function()
@@ -198,9 +228,9 @@ local function GameModeEntryPointHook()
             
             -- Respect user's visibility preference on respawn
             if state.IsTrackerVisible then
-                progress_hud.SetVisibility(helpers.Visibility.HITTESTINVISIBLE)
+                in_game_progress_hud.SetVisibility(hud_utils.Visibility.HITTESTINVISIBLE)
             else
-                progress_hud.SetVisibility(helpers.Visibility.HIDDEN)
+                in_game_progress_hud.SetVisibility(hud_utils.Visibility.HIDDEN)
             end
         end)
     end)
@@ -208,7 +238,7 @@ local function GameModeEntryPointHook()
     pcall(function()
         RegisterHook(GAME_STATE_PATHS.HighScoresPath .. ":Construct", function(self, ...)
             GameModeEndSongHook()
-            progress_hud.SetVisibility(helpers.Visibility.HIDDEN)
+            in_game_progress_hud.SetVisibility(hud_utils.Visibility.HIDDEN)
             results_hud.Show(_G.__SessionAggAccuracy.GranularStats, _G.__SessionAggAccuracy)
         end)
     end)
@@ -217,13 +247,12 @@ local function GameModeEntryPointHook()
 end
 
 -- ============ INITIALIZATION ============
-local isGameModeHooked = false
-
 LoopAsync(2000, function()
-    if isGameModeHooked then return true end
+    local state = _G.__SessionAggAccuracy
+    if state.IsInitialized then return true end
     if GameModeEntryPointHook() then
-        isGameModeHooked = true
-        logf(_logger.info, "PerformanceTracker successfully initialized.")
+        state.IsInitialized = true
+        logf(log.info, "PerformanceTracker successfully initialized.")
         return true
     end
     return false
@@ -235,8 +264,8 @@ LoopAsync(2000, function()
     local ok, s = pcall(function()
         RegisterHook("/Script/Engine.PlayerController:ClientRestart", function( ... )
             ExecuteInGameThread(function()
-                if not status_hud.IsValid() then status_hud.Create() end
-                if not progress_hud.IsValid() then progress_hud.Create() end
+                if not status_indicator_hud.IsValid() then status_indicator_hud.Create() end
+                if not in_game_progress_hud.IsValid() then in_game_progress_hud.Create() end
             end)
         end)
     end)
@@ -245,28 +274,28 @@ end)
 
 
 RegisterKeyBind(Key.F3, function() 
-    local isOn = progress_hud.Toggle()
-    status_hud.SetStatus(isOn)
+    local isOn = in_game_progress_hud.Toggle()
+    status_indicator_hud.SetStatus(isOn)
     _G.__SessionAggAccuracy.IsTrackerVisible = isOn
 end) 
 
 RegisterKeyBind(Key.F4, function() 
-    progress_hud.SetVisibility(helpers.Visibility.HITTESTINVISIBLE)
-    status_hud.SetStatus(true)
+    in_game_progress_hud.SetVisibility(hud_utils.Visibility.HITTESTINVISIBLE)
+    status_indicator_hud.SetStatus(true)
     _G.__SessionAggAccuracy.IsTrackerVisible = true
 end) 
 
 RegisterKeyBind(Key.F5, function() 
-    progress_hud.SetVisibility(helpers.Visibility.HIDDEN)
-    status_hud.SetStatus(false)
+    in_game_progress_hud.SetVisibility(hud_utils.Visibility.HIDDEN)
+    status_indicator_hud.SetStatus(false)
     _G.__SessionAggAccuracy.IsTrackerVisible = false
 end)
 
 -- UI Update Loop
 LoopAsync(cfg.HUD_UPDATE_INTERVAL_MS, function()
     pcall(function()
-        if progress_hud.IsValid() then
-            progress_hud.Update(_G.__SessionAggAccuracy.GranularStats, _G.__SessionAggAccuracy)
+        if in_game_progress_hud.IsValid() then
+            in_game_progress_hud.Update(_G.__SessionAggAccuracy.GranularStats, _G.__SessionAggAccuracy)
         end
     end)
     return false

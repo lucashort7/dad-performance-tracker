@@ -1,6 +1,6 @@
 local M = {}
-local Factory = require("imgui.umg_factory")
-local helpers = require("helpers.hud_helpers")
+local Factory = require("utils.umg_factory")
+local helpers = require("utils.hud_utils")
 
 M.statusIndicatorWidget = nil
 M.statusIndicatorValue = nil

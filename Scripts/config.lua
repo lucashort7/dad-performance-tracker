@@ -1,7 +1,7 @@
 local cfg = {}
 
 -- ~mod
-cfg.MOD_NAME = "AccuracyTracker"
+cfg.MOD_NAME = "PerformanceTracker"
 
 -- ~log
 cfg.LOG_LEVEL = 'info'
