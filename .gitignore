@@ -1,3 +1,13 @@
+# === UE4SS Specific ===
+enabled.txt
+*.log
+
+# === IDEs ===
+.vscode/
+.idea/
+*.swp
+*.swo
+
 # Compiled Lua sources
 luac.out
 
