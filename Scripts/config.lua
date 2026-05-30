@@ -4,7 +4,7 @@ local cfg = {}
 cfg.MOD_NAME = "PerformanceTracker"
 
 -- ~log
-cfg.LOG_LEVEL = 'info'
+cfg.LOG_LEVEL = 'debug'
 
 -- ~timing
 cfg.HUD_UPDATE_INTERVAL_MS = 400

@@ -98,21 +98,24 @@ function M.Create()
     M.progressWidget = hud
 end
 
-function M.Update(granularStats, sessionSummary)
+function M.Update(state)
+    if not M.progressWidget or not M.progressWidget:IsValid() then
+        M.Create()
+    end
     if not M.textControls then return end
 
-    if sessionSummary and M.summaryControls.Total and M.summaryControls.Total:IsValid() then
+    if state and M.summaryControls.Total and M.summaryControls.Total:IsValid() then
         pcall(function()
-            M.summaryControls.Total:SetText(umg_factory.ToFText(string.format("%d hits ", sessionSummary.TotalActions)))
-            M.summaryControls.Accuracy:SetText(umg_factory.ToFText(string.format("(%.1f%%)", sessionSummary.CurrentAccuracy)))
-            M.summaryControls.Accuracy:SetColorAndOpacity(GetAccuracyColor(sessionSummary.CurrentAccuracy))
+            M.summaryControls.Total:SetText(umg_factory.ToFText(string.format("[%d/%d] ", state.PerfectHits, state.TotalActions)))
+            M.summaryControls.Accuracy:SetText(umg_factory.ToFText(string.format("(%.1f%%)", state.CurrentAccuracy)))
+            M.summaryControls.Accuracy:SetColorAndOpacity(GetAccuracyColor(state.CurrentAccuracy))
         end)
     end
 
     for abilityKey, _ in pairs(abilities_catalog.ABILITIES) do
         local controls = M.textControls[abilityKey]
         if controls and controls.Stats:IsValid() and controls.Accuracy:IsValid() then
-            local stats = granularStats[abilityKey] or {Total = 0, Perfect = 0}
+            local stats = state.GranularStats[abilityKey] or {Total = 0, Perfect = 0}
             local acc = (stats.Total > 0) and (stats.Perfect / stats.Total * 100.0) or 100.0
             
             pcall(function()
@@ -125,13 +128,19 @@ function M.Update(granularStats, sessionSummary)
 end
 
 function M.SetVisibility(visibility)
+    if not M.progressWidget or not M.progressWidget:IsValid() then
+        M.Create()
+    end
     if not M.progressWidget or not M.progressWidget:IsValid() then return end
     if M.progressWidget:GetVisibility() == visibility then return end
     pcall(function() M.progressWidget:SetVisibility(visibility) end)
 end
 
 function M.Toggle()
-    if not M.progressWidget or not M.progressWidget:IsValid() then return end
+    if not M.progressWidget or not M.progressWidget:IsValid() then
+        M.Create()
+    end
+    if not M.progressWidget or not M.progressWidget:IsValid() then return false end
     local current = M.progressWidget:GetVisibility()
     local nextVisibility = (current == hud_utils.Visibility.HITTESTINVISIBLE and 
                 hud_utils.Visibility.HIDDEN or hud_utils.Visibility.HITTESTINVISIBLE)
@@ -140,7 +149,12 @@ function M.Toggle()
 end
 
 function M.IsValid()
-    return M.progressWidget and M.progressWidget:IsValid()
+    local isValid = M.progressWidget and M.progressWidget:IsValid()
+    if isValid then
+        local ok, inView = pcall(function() return M.progressWidget:IsInViewport() end)
+        if ok and not inView then return false end
+    end
+    return isValid
 end
 
 return M

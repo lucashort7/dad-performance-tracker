@@ -2,7 +2,7 @@ local json = require("utils.json")
 local M = {}
 
 -- Constant file path in mod directory
-local SAVE_PATH = "Mods/dad-performance-tracker/performance_history.json"
+local SAVE_PATH = "./ue4ss/Mods/PerformanceTracker/Data/performance_history.json"
 
 ---@return table
 function M.LoadHistory()
@@ -47,10 +47,11 @@ end
 --- Core logic to update Personal Best
 ---@param session table The global state snapshot (__SessionAggAccuracy)
 function M.UpdateBestRun(session)
-    -- PK is SongHash, fallback to SongID or Name if empty
+    -- PK is SongHash, fallback to SongID, then AssetPath, then Name
     local pk = session.SongHash
     if not pk or pk == "" then pk = tostring(session.SongID) end
-    if not pk or pk == "0" then pk = session.SongName end
+    if not pk or pk == "0" then pk = session.AssetPath end
+    if not pk or pk == "" then pk = session.SongName end
     
     local history = M.LoadHistory()
     local pb = history[pk] or {
@@ -73,7 +74,7 @@ function M.UpdateBestRun(session)
         isNewPB = true
         pb.highScore = session.TotalScore
         pb.bestAcc = session.CurrentAccuracy
-        pb.bestRank = session.LastRank or "D" -- We might need to store the rank in state
+        pb.bestRank = session.LastRank or "F" -- We might need to store the rank in state
         pb.bestCombo = session.MaxCombo
         pb.isFC = session.IsFullCombo
     end

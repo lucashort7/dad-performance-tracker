@@ -39,6 +39,9 @@ function M.Create()
 end
 
 function M.SetStatus(isOn)
+    if not M.statusIndicatorWidget or not M.statusIndicatorWidget:IsValid() then
+        M.Create()
+    end
     if not M.statusIndicatorValue or not M.statusIndicatorValue:IsValid() then return end
     pcall(function()
         if isOn then
@@ -52,7 +55,12 @@ function M.SetStatus(isOn)
 end
 
 function M.IsValid()
-    return M.statusIndicatorWidget and M.statusIndicatorWidget:IsValid()
+    local isValid = M.statusIndicatorWidget and M.statusIndicatorWidget:IsValid()
+    if isValid then
+        local ok, inView = pcall(function() return M.statusIndicatorWidget:IsInViewport() end)
+        if ok and not inView then return false end
+    end
+    return isValid
 end
 
 return M

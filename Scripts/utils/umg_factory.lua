@@ -1,6 +1,6 @@
 local M = {}
 local UEHelpers = require("UEHelpers")
-local helpers = require("helpers.hud_helpers")
+local helpers = require("utils.hud_utils")
 
 -- Caches for UMG Classes
 local C = {

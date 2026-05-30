@@ -135,6 +135,10 @@ end
 --[[ ============ CORE ============ --]]
 
 function M.Show(granularStats, sessionSummary)
+    if M.resultsWidget and M.resultsWidget:IsValid() then
+        M.resultsWidget:RemoveFromParent()
+    end
+
     local hud = umg_factory.CreateHUD("ResultsHUD")
     if not hud then return end
 
