@@ -67,11 +67,11 @@ for i, x in ipairs(modes) do
     local lineinfo = info.short_src .. ":" .. info.currentline
 
     -- Output to console
-    print(string.format("%s[%s] [%s] >> %s\n",
+    print(string.format("%s[%s]%s[%s] >> %s\n",
                         log.usecolor and x.color or "",
                         nameupper,
                         -- os.date("%H:%M:%S"),
-                        -- log.usecolor and "\27[0m" or "",
+                        x.name == 'trace' and " <[" .. lineinfo .. "> " or "",
                         config.MOD_NAME,
                         msg))
 

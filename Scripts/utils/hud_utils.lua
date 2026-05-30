@@ -26,7 +26,7 @@ M.Alignments = {
 	upper_left = { anchor = { 0, 0.25 }, align = { 0, 0.25 }, pos = { 10, 7.5 } },
 	topmidleft_test = { anchor = { 0.25, 0 }, align = { 0.25, 0 }, pos = { 7, 10 } },
 	midbottomleft_test = { anchor = { 0.25, 1 }, align = { 0.25, 1 }, pos = { -7.5, -10 } },
-	midbottomright_test = { anchor = { 1, 0.95 }, align = { 1, 0.95 }, pos = { -9, -9 } },
+	midbottomright_test = { anchor = { 1, 0.85 }, align = { 1, 0.85 }, pos = { -9, -8 } },
 }
 
 M.KTextLib = UEHelpers.GetKismetTextLibrary()

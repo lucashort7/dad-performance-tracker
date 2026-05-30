@@ -40,7 +40,7 @@ local function renderHeader(container, songName)
 	umg_factory.CreateTextBlock(container, "ResultsTitle", {
 		size = 30,
 		text = "PERFORMANCE REPORT",
-		color = hud_utils.FSlateColor(0, 1, 1, 1), -- CYAN
+		color = hud_utils.FSlateColor(1, 1, 1, 1), -- white
 		fontPath = "/Game/Pagoda/UI/Fonts/Primary_Font.Primary_Font",
 	})
 
@@ -68,13 +68,13 @@ local function renderLeftColumn(container, stats, summary)
 			summary.PerfectHits,
 			summary.TotalActions
 		),
-		color = hud_utils.FSlateColor(0, 1, 1, 1), -- CYAN
+		color = hud_utils.FSlateColor(1, 1, 1, 1), -- white
 	})
 
 	-- 2. Max Combo Row
 	local comboText = string.format("Max Combo: %d", summary.MaxCombo or 0)
-	local comboColor = hud_utils.FSlateColor(1, 1, 0, 1) -- Yellow
-
+	local comboColor = hud_utils.FSlateColor(1, 1, 1, 1) -- white
+  
 	if summary.IsFullCombo and summary.TotalActions > 0 then
 		comboText = comboText .. " [FULL COMBO]"
 		if summary.CurrentAccuracy >= 100 then
@@ -111,7 +111,7 @@ local function renderLeftColumn(container, stats, summary)
 
 		umg_factory.CreateTextBlock(hBox, "Stats_" .. abilityKey, {
 			size = 10,
-			color = hud_utils.FSlateColor(0, 1, 1, 1), -- CYAN
+			color = hud_utils.FSlateColor(1, 1, 1, 1), -- white
 			text = string.format("[%d/%d] ", aStats.Perfect, aStats.Total),
 		})
 

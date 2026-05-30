@@ -9,6 +9,8 @@ M.progressWidget = nil
 M.textControls = {}
 M.summaryControls = {}
 
+-- TODO: Review this, maybe we can use some basic colors
+---       like from green to red based on accuracy thresholds?
 local function GetAccuracyColor(acc)
 	if acc >= 100 then
 		return hud_utils.FSlateColor(0, 1, 0, 0.9) -- Bright Green
@@ -39,16 +41,19 @@ function M.Create()
 	umg_factory.CreateTextBlock(summaryHBox, "TextBlock_Summary_Label", {
 		size = 11,
 		text = "Session: ",
-		color = hud_utils.FSlateColor(1, 1, 1, 0.7),
+    skew = 0.176,
+    shadowOffset = { X = 0.2, Y = 0.2 },
+    shadowColor = hud_utils.FLinearColor(0, 0, 0, 1),
 	})
 
 	local summaryTotalText = umg_factory.CreateTextBlock(summaryHBox, "TextBlock_Summary_Total", {
-		size = 11,
+		size = 9,
 		text = "0 hits ",
+    color = hud_utils.FSlateColor(1, 1, 1, 0.6) -- slighty greyish 
 	})
 
 	local summaryAccText = umg_factory.CreateTextBlock(summaryHBox, "TextBlock_Summary_Acc", {
-		size = 11,
+		size = 9,
 		text = "(100%)",
 		color = GetAccuracyColor(100),
 	})
@@ -58,6 +63,7 @@ function M.Create()
 		Accuracy = summaryAccText,
 	}
 
+  umg_factory.CreateTextBlock(vBox, "Separator", { size = 8, text = "________________________________________" })
 	umg_factory.CreateTextBlock(vBox, "Spacer", { size = 4, text = " " })
 
 	for abilityKey, _ in pairs(abilities_catalog.ABILITIES) do
@@ -69,16 +75,19 @@ function M.Create()
 		umg_factory.CreateTextBlock(hBox, "TextBlock_Label_" .. abilityKey, {
 			size = 10,
 			text = string.format("%s: ", label),
-			skew = 0.176,
+      skew = 0.176,
+      shadowOffset = { X = 0.2, Y = 0.2 },
+      shadowColor = hud_utils.FLinearColor(0, 0, 0, 1),
 		})
 
 		local statsText = umg_factory.CreateTextBlock(hBox, "TextBlock_Stats_" .. abilityKey, {
-			size = 10,
+			size = 8,
 			text = "[0/0] ",
+      color = hud_utils.FSlateColor(1, 1, 1, 0.7) -- slighty greyish 
 		})
 
 		local accText = umg_factory.CreateTextBlock(hBox, "TextBlock_Acc_" .. abilityKey, {
-			size = 9,
+			size = 8,
 			text = "(100%)",
 			color = GetAccuracyColor(100),
 		})
@@ -102,7 +111,7 @@ end
 
 function M.Update(state)
 	if not M.progressWidget or not M.progressWidget:IsValid() then
-		M.Create()
+		return
 	end
 	if not M.textControls then
 		return
@@ -135,9 +144,6 @@ end
 
 function M.SetVisibility(visibility)
 	if not M.progressWidget or not M.progressWidget:IsValid() then
-		M.Create()
-	end
-	if not M.progressWidget or not M.progressWidget:IsValid() then
 		return
 	end
 	if M.progressWidget:GetVisibility() == visibility then
@@ -149,9 +155,6 @@ function M.SetVisibility(visibility)
 end
 
 function M.Toggle()
-	if not M.progressWidget or not M.progressWidget:IsValid() then
-		M.Create()
-	end
 	if not M.progressWidget or not M.progressWidget:IsValid() then
 		return false
 	end

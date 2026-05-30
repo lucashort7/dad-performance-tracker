@@ -15,6 +15,6 @@ cfg.HEARTBEAT_MS = 5000
     ============ ~hud cfg ============ 
 --]]
 cfg.HUD_MAIN_ALLIGNMENT = "midbottomright_test" -- 'upper_left'
-cfg.HUD_LABEL_LAYOUT = "full" -- Can be "full", "friendly", or "shortname"
+cfg.HUD_LABEL_LAYOUT = "friendly" -- Can be "full", "friendly", or "shortname"
 
 return cfg

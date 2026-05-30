@@ -18,9 +18,14 @@ M.CurrentState = M.States.PRE_GAME
 --- Global Setup: Recreate everything if needed (Boot/Map Change)
 function M.EnsureUI()
 	if not status_indicator_hud.IsValid() then
+		log.debug("[HUD] Creating status_indicator_hud...")
 		status_indicator_hud.Create()
+    -- Sync initial status after creation
+    M.UpdateModStatus()
 	end
+  
 	if not in_game_progress_hud.IsValid() then
+		log.debug("[HUD] Creating in_game_progress_hud...")
 		in_game_progress_hud.Create()
 	end
 	-- Note: ResultsHUD is created on-demand in .Show()
@@ -34,14 +39,14 @@ end
 ---@param newState number One of M.States
 function M.SetState(newState, sessionState)
 	M.CurrentState = newState
-	-- M.EnsureUI()
+	M.EnsureUI()
 
 	if newState == M.States.PRE_GAME then
 		in_game_progress_hud.SetVisibility(hud_utils.Visibility.HIDDEN)
 		results_hud.Hide()
 	elseif newState == M.States.IN_GAME then
-    -- TODO: this became a problem (investigate)
-    if sessionState.IsTrackerVisible then
+    local liveState = sessionState or _G.__SessionAggAccuracy
+    if liveState.IsTrackerVisible then
 	    in_game_progress_hud.SetVisibility(hud_utils.Visibility.HITTESTINVISIBLE)
     end
 		results_hud.Hide()
@@ -55,27 +60,21 @@ end
 
 --- Heartbeat sync for the 400ms loop
 function M.Sync(sessionState)
-	-- M.EnsureUI()
+	M.EnsureUI()
 
 	-- Ensure we use the absolute latest global state
 	local liveState = sessionState or _G.__SessionAggAccuracy
 
+  in_game_progress_hud.Update(liveState)
 	-- Enforce Visibility Logic
-	if liveState.IsTrackerVisible and M.CurrentState == M.States.IN_GAME then
-		-- TRIPLE CHECK: If we ARE in-game but the widget is NOT in viewport, force recreation
-		if not in_game_progress_hud.IsValid() then
-			in_game_progress_hud.Create()
-		end
-
-		in_game_progress_hud.Update(liveState)
-		in_game_progress_hud.SetVisibility(hud_utils.Visibility.HITTESTINVISIBLE)
-	else
-		in_game_progress_hud.SetVisibility(hud_utils.Visibility.HIDDEN)
-	end
+  if M.CurrentState == M.States.IN_GAME then
+    if liveState.IsTrackerVisible then
+      in_game_progress_hud.SetVisibility(hud_utils.Visibility.HITTESTINVISIBLE)
+    else
+      in_game_progress_hud.SetVisibility(hud_utils.Visibility.HIDDEN)
+    end
+  end
 end
-
-
-
 
 function M.UpdateModStatus(sessionState)
   -- Ensure we use the absolute latest global state
