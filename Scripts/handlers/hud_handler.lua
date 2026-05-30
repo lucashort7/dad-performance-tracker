@@ -60,22 +60,14 @@ function M.Sync(sessionState)
 	-- Ensure we use the absolute latest global state
 	local liveState = sessionState or _G.__SessionAggAccuracy
 
+  in_game_progress_hud.Update(liveState)
 	-- Enforce Visibility Logic
-	if liveState.IsTrackerVisible and M.CurrentState == M.States.IN_GAME then
-		-- TRIPLE CHECK: If we ARE in-game but the widget is NOT in viewport, force recreation
-		if not in_game_progress_hud.IsValid() then
-			in_game_progress_hud.Create()
-		end
-
-		in_game_progress_hud.Update(liveState)
+	if liveState.IsTrackerVisible then
 		in_game_progress_hud.SetVisibility(hud_utils.Visibility.HITTESTINVISIBLE)
 	else
 		in_game_progress_hud.SetVisibility(hud_utils.Visibility.HIDDEN)
 	end
 end
-
-
-
 
 function M.UpdateModStatus(sessionState)
   -- Ensure we use the absolute latest global state

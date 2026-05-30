@@ -281,19 +281,13 @@ LoopAsync(cfg.HEARTBEAT_MS, function()
 	end
 	if GameModeEntryPointHook() then
 		state.__setup_hooks = true
-		log.debug("PerformanceTracker Solution Initialized.")
+		log.debug("All hooks initialized succesfully!!!")
 
-		-- HOT RELOAD CONTINGENCY
-		-- pcall(function()
-		-- 	local PC = UEHelpers.GetPlayerController()
-		-- 	if PC and PC:IsValid() and PC:GetPawn() and PC:GetPawn():IsValid() then
-		-- 		-- Check if we are mid-game
-		-- 		if StaticFindObject(GAME_STATE_PATHS.CombatScorePath) then
-		-- 			CaptureSongMetadata()
-		-- 			hud_handler.SetState(hud_handler.States.IN_GAME, state)
-		-- 		end
-		-- 	end
-		-- end)
+    pcall(function()
+      ExecuteInGameThread(function()
+        hud_handler.EnsureUI()
+      end)  
+    end)
 		return true
 	end
 	return false
