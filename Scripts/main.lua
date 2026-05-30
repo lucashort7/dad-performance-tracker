@@ -18,6 +18,8 @@ _G.__SessionAggAccuracy = _G.__SessionAggAccuracy or {
   PerfectHits = 0,
   CurrentAccuracy = 100.0,
   MaxCombo = 0,
+  -- innacurate but helps to determine if we had a combo at all without waiting for end of song
+  internalMaxCombo = 0, 
   TotalScore = 0,
   IsFullCombo = true,
   LastRank = "F",
@@ -47,6 +49,7 @@ local function ResetSessionTracker()
 	state.PerfectHits = 0
 	state.CurrentAccuracy = 100.0
 	state.MaxCombo = 0
+  internalMaxCombo = 0
 	state.TotalScore = 0
 	state.IsFullCombo = true
 	state.SongName = "Unknown"
@@ -204,9 +207,20 @@ local function GameModeEntryPointHook()
 	if not rh.Combo then
 		local okCombo, _ = pcall(function()
 			RegisterHook(GAME_STATE_PATHS.CombatScorePath .. ":HandleComboCountChanged", function(self, ComboCount)
+        -- log.trace("[HandleComboCountChanged()] ComboCount: " .. tostring(ComboCount:get()))
 				local innerState = _G.__SessionAggAccuracy
-				if ComboCount:get() == 0 and innerState.TotalActions > 0 then
+        local combo = ComboCount:get()
+        innerState.internalMaxCombo = combo >= innerState.internalMaxCombo and combo or innerState.internalMaxCombo
+        -- FIXME: review this logic
+        -- old:
+				-- if ComboCount:get() == 0 and innerState.TotalActions > 0 then
+        -- new:
+        if ComboCount:get() == 0 and innerState.internalMaxCombo > 0 then
 					innerState.IsFullCombo = false
+          log.debug("isFullCombo: false (Combo broke at " .. 
+                      tostring(innerState.LastMusicTime) .. 
+                      "s -> MaxCombo: " .. tostring(innerState.internalMaxCombo) .. ")"
+                    )
 				end
 			end)
 		end)
