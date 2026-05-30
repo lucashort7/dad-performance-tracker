@@ -1,6 +1,7 @@
 local M = {}
 local umg_factory = require("utils.umg_factory")
 local hud_utils = require("utils.hud_utils")
+local cfg = require("config")
 
 M.statusIndicatorWidget = nil
 M.statusIndicatorValue = nil
@@ -17,7 +18,7 @@ function M.Create()
 
 	umg_factory.CreateTextBlock(hBox, "StatusLabel", {
 		size = 8,
-		text = "AccuracyTracker: ",
+		text = cfg.MOD_NAME .. ": ",
 		color = hud_utils.FSlateColor(1, 1, 1, 0.6),
 	})
 
@@ -41,12 +42,13 @@ function M.Create()
 end
 
 function M.SetStatus(isOn)
-	if not M.statusIndicatorWidget or not M.statusIndicatorWidget:IsValid() then
-		M.Create()
-	end
-	if not M.statusIndicatorValue or not M.statusIndicatorValue:IsValid() then
-		return
-	end
+  -- TODO: review with gemy why this breaks logic...
+	-- if not M.statusIndicatorWidget or not M.statusIndicatorWidget:IsValid() then
+	-- 	M.Create()
+	-- end
+	-- if not M.statusIndicatorValue or not M.statusIndicatorValue:IsValid() then
+	-- 	return
+	-- end
 	pcall(function()
 		if isOn then
 			M.statusIndicatorValue:SetText(umg_factory.ToFText("ON"))

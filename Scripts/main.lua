@@ -13,31 +13,31 @@ print("[PerformanceTracker] ~>> BOOT: All modules loaded successfully")
 local pcall, string_format = pcall, string.format
 
 --[[ ============ STATEs ============  --]]
-_G.__SessionAggAccuracy = _G.__SessionAggAccuracy
-	or {
-		TotalActions = 0,
-		PerfectHits = 0,
-		CurrentAccuracy = 100.0,
-		MaxCombo = 0,
-		TotalScore = 0,
-		IsFullCombo = true,
-		LastRank = "F",
-		SongName = "Unknown",
-		AssetPath = "",
-		LastMusicTime = 0.0,
-		LastActionType = "None",
-		GranularStats = {},
-		IsTrackerVisible = true,
+_G.__SessionAggAccuracy = _G.__SessionAggAccuracy or {
+  TotalActions = 0,
+  PerfectHits = 0,
+  CurrentAccuracy = 100.0,
+  MaxCombo = 0,
+  TotalScore = 0,
+  IsFullCombo = true,
+  LastRank = "F",
+  SongName = "Unknown",
+  AssetPath = "",
+  LastMusicTime = 0.0,
+  LastActionType = "None",
+  GranularStats = {},
+  IsTrackerVisible = true,
 
-		-- Hook Control Flags
-		IsInitialized = false,
-		RegisteredHooks = {
-			Combat = false,
-			Combo = false,
-			Lifecycle = false,
-			Scores = false,
-		},
-	}
+  -- Hook Control Flags
+  __setup_hooks = false,
+  __hb_hooks = false,
+  __reg_hooks = {
+    Combat = false,
+    Combo = false,
+    Lifecycle = false,
+    Scores = false,
+  },
+}
 
 --[[ ============ UTILS ============  --]]
 
@@ -80,13 +80,15 @@ local function UpdateGlobalAccuracy(isPerfect, musicTime, actionType)
 		return
 	end
 
-	-- FALLBACK: If we are hitting things but not in IN_GAME state, force it now.
-	if hud_handler.CurrentState ~= hud_handler.States.IN_GAME then
-		ResetSessionTracker()
-		CaptureSongMetadata()
-		hud_handler.SetState(hud_handler.States.IN_GAME, state)
-		log.debug("Gameplay Started via Combat Fallback (Step 4)")
-	end
+	-- -- FALLBACK: If we are hitting things but not in IN_GAME state, force it now.
+	-- if hud_handler.CurrentState ~= hud_handler.States.IN_GAME then
+	-- 	ResetSessionTracker()
+	-- 	CaptureSongMetadata()
+	-- 	hud_handler.SetState(hud_handler.States.IN_GAME, state)
+	-- 	log.debug("Gameplay Started via Combat Fallback (Step 4)")
+	-- end
+
+  hud_handler.SetState(hud_handler.States.IN_GAME, state)
 
 	if not state.GranularStats[actionType] then
 		state.GranularStats[actionType] = {
@@ -164,6 +166,8 @@ end
 
 local function GameModeEndSongHook()
 	local state = _G.__SessionAggAccuracy
+
+  -- TODO: maybe its `history_handler` responsability
 	pcall(function()
 		local PC = UEHelpers.GetPlayerController()
 		if PC and PC:IsValid() then
@@ -182,7 +186,7 @@ end
 
 local function GameModeEntryPointHook()
 	local state = _G.__SessionAggAccuracy
-	local rh = state.RegisteredHooks
+	local rh = state.__reg_hooks
 
 	if not rh.Combat then
 		rh.Combat = RegisterCombatHooks()
@@ -202,38 +206,29 @@ local function GameModeEntryPointHook()
 
 	if not rh.Lifecycle then
 		local okLifecycle, _ = pcall(function()
-			-- THE SENTINEL: ClientRestart handles Map/Session changes
-			RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, NewPawn)
-				local state = _G.__SessionAggAccuracy
 
-				-- Check if we are in a match by looking for the Score widget
-				local combatScoreWidget = StaticFindObject(GAME_STATE_PATHS.CombatScorePath)
-				if combatScoreWidget and combatScoreWidget:IsValid() then
-					-- If ClientRestart fires and we have a score widget, it's a RESTART/RETRY
-					ResetSessionTracker()
-					CaptureSongMetadata()
-					hud_handler.SetState(hud_handler.States.IN_GAME, state)
-					log.debug("Gameplay Reset via ClientRestart (Sentinel)")
-				else
-					-- No score widget? We are back in menu.
-					hud_handler.SetState(hud_handler.States.PRE_GAME, state)
-					log.debug("Mod Ready in Menu (Sentinel)")
-				end
-			end)
+      RegisterHook("/Game/Pagoda/Characters/Player/BP_PagodaPlayerController.BP_PagodaPlayerController_C:ReceiveEndPlay", function( self, EndPlayReason  )
+        hud_handler.SetState(hud_handler.States.PRE_GAME, state)
+        -- Destroyed = 0,
+        -- LevelTransition = 1,
+        -- EndPlayInEditor = 2,
+        -- RemovedFromWorld = 3,
+        -- Quit = 4,
+        log.debug("EndPlayReason: " .. tostring(EndPlayReason:get()))
+      end)
 
-			-- THE "GO!": Step 4. Countdown Complete (or UI Appeared).
-			local onStart = function()
+			RegisterHook("/Game/Pagoda/Levels/Test/BP_InfiniteDisco.BP_InfiniteDisco_C:InitPlayerAttributes", function()
 				local innerState = _G.__SessionAggAccuracy
 				-- ALWAYS reset on start gestures to handle retries properly
 				ResetSessionTracker()
 				CaptureSongMetadata()
 				hud_handler.SetState(hud_handler.States.IN_GAME, innerState)
-				log.debug("Gameplay Started/Reset! (Step 4)")
-			end
+				log.debug("Gameplay Started/Reset! (Step 4) -> BP_InfiniteDisco_C:InitPlayerAttributes")
+      end)
 
-			RegisterHook(GAME_STATE_PATHS.CountdownPath .. ":NotifyLevelStartCountdownComplete", onStart)
-			RegisterHook(GAME_STATE_PATHS.CombatScorePath .. ":Construct", onStart)
+      
 		end)
+
 		rh.Lifecycle = okLifecycle
 	end
 
@@ -245,6 +240,12 @@ local function GameModeEntryPointHook()
 				hud_handler.SetState(hud_handler.States.RESULTS, innerState)
 				log.debug("Gameplay End detected (Results)")
 			end)
+
+      -- from end results screen to songselect, end_result_hud needs to hide
+      RegisterHook("/Game/Pagoda/UI/Game/WBP_LevelEndScreen.WBP_LevelEndScreen_C:Destruct", function()
+				hud_handler.HideResultsUI()
+				log.debug("WBP_LevelEndScreen_C:Destruct")
+      end)
 		end)
 		rh.Scores = okScores
 	end
@@ -253,34 +254,59 @@ local function GameModeEntryPointHook()
 end
 
 -- ============ INITIALIZATION ============
-LoopAsync(5000, function()
+
+LoopAsync(cfg.HEARTBEAT_MS, function() 
+  local state = _G.__SessionAggAccuracy
+  if state.__hb_hooks then return true end
+
+  local status, _ = pcall(function()
+    RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, ...)
+      log.debug("/Script/Engine.PlayerController:ClientRestart")
+      ExecuteInGameThread(function()
+        hud_handler.EnsureUI()
+      end)    
+    end)
+  end)
+  if status then 
+    state.__hb_hooks = true
+  end
+  return status
+
+end)
+
+LoopAsync(cfg.HEARTBEAT_MS, function()
 	local state = _G.__SessionAggAccuracy
-	if state.IsInitialized then
+	if state.__setup_hooks then
 		return true
 	end
 	if GameModeEntryPointHook() then
-		state.IsInitialized = true
+		state.__setup_hooks = true
 		log.debug("PerformanceTracker Solution Initialized.")
 
 		-- HOT RELOAD CONTINGENCY
-		pcall(function()
-			local PC = UEHelpers.GetPlayerController()
-			if PC and PC:IsValid() and PC:GetPawn() and PC:GetPawn():IsValid() then
-				-- Check if we are mid-game
-				if StaticFindObject(GAME_STATE_PATHS.CombatScorePath) then
-					CaptureSongMetadata()
-					hud_handler.SetState(hud_handler.States.IN_GAME, state)
-				end
-			end
-		end)
+		-- pcall(function()
+		-- 	local PC = UEHelpers.GetPlayerController()
+		-- 	if PC and PC:IsValid() and PC:GetPawn() and PC:GetPawn():IsValid() then
+		-- 		-- Check if we are mid-game
+		-- 		if StaticFindObject(GAME_STATE_PATHS.CombatScorePath) then
+		-- 			CaptureSongMetadata()
+		-- 			hud_handler.SetState(hud_handler.States.IN_GAME, state)
+		-- 		end
+		-- 	end
+		-- end)
 		return true
 	end
 	return false
 end)
 
+
 -- ============ UI SYNC LOOP ============
 LoopAsync(cfg.HUD_UPDATE_INTERVAL_MS, function()
-	pcall(function()
+  -- early return... if not IN_GAME we dont need to sync
+  if hud_handler.CurrentState ~= hud_handler.States.IN_GAME then
+    return
+  end
+	ExecuteInGameThread(function()
 		hud_handler.Sync(_G.__SessionAggAccuracy)
 	end)
 	return false
@@ -289,10 +315,13 @@ end)
 -- ============ KEYBINDS ============
 RegisterKeyBind(Key.F3, function()
 	_G.__SessionAggAccuracy.IsTrackerVisible = not _G.__SessionAggAccuracy.IsTrackerVisible
+  hud_handler.UpdateModStatus(_G.__SessionAggAccuracy)
 end)
 RegisterKeyBind(Key.F4, function()
 	_G.__SessionAggAccuracy.IsTrackerVisible = true
+  hud_handler.UpdateModStatus(_G.__SessionAggAccuracy)
 end)
 RegisterKeyBind(Key.F5, function()
 	_G.__SessionAggAccuracy.IsTrackerVisible = false
+  hud_handler.UpdateModStatus(_G.__SessionAggAccuracy)
 end)
