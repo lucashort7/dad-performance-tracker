@@ -51,6 +51,7 @@ local function ResetSessionTracker()
 	state.IsFullCombo = true
 	state.SongName = "Unknown"
 	state.AssetPath = ""
+  state.SongUniqueID = ""
 	state.LastMusicTime = 0.0
 	state.LastActionType = "Reset"
 	state.GranularStats = {}
@@ -65,7 +66,15 @@ local function CaptureSongMetadata()
 			if currentSong and currentSong:IsValid() then
 				state.SongName = currentSong.SongName:ToString()
 				state.AssetPath = currentSong:GetFullName()
-				log.debug("Metadata captured:", state.SongName)
+        state.SongUniqueID = currentSong:GetImportedSongUniqueID()
+				log.debug(
+          string_format(
+            "CURRENT SONG METADATA:  %s | %s | %s ",
+            tostring(state.SongUniqueID),
+            state.SongName,
+            state.AssetPath
+          )
+        )
 			end
 		end
 	end)
@@ -116,15 +125,15 @@ local function UpdateGlobalAccuracy(isPerfect, musicTime, actionType)
 	state.LastMusicTime = musicTime
 	state.LastActionType = actionType or "Unknown"
 
-	log.debug(
-		string_format(
-			"METRIC UPDATE: %s | Total: %d | Perfect: %d | Acc: %.2f%%",
-			actionType,
-			state.TotalActions,
-			state.PerfectHits,
-			state.CurrentAccuracy
-		)
-	)
+	-- log.debug(
+	-- 	string_format(
+	-- 		"METRIC UPDATE: %s | Total: %d | Perfect: %d | Acc: %.2f%%",
+	-- 		actionType,
+	-- 		state.TotalActions,
+	-- 		state.PerfectHits,
+	-- 		state.CurrentAccuracy
+	-- 	)
+	-- )
 end
 
 local GAME_STATE_PATHS = {
@@ -261,7 +270,7 @@ LoopAsync(cfg.HEARTBEAT_MS, function()
 
   local status, _ = pcall(function()
     RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, ...)
-      log.debug("/Script/Engine.PlayerController:ClientRestart")
+      log.trace("PlayerController:ClientRestart")
       ExecuteInGameThread(function()
         hud_handler.EnsureUI()
       end)    
@@ -296,10 +305,6 @@ end)
 
 -- ============ UI SYNC LOOP ============
 LoopAsync(cfg.HUD_UPDATE_INTERVAL_MS, function()
-  -- early return... if not IN_GAME we dont need to sync
-  if hud_handler.CurrentState ~= hud_handler.States.IN_GAME then
-    return
-  end
 	ExecuteInGameThread(function()
 		hud_handler.Sync(_G.__SessionAggAccuracy)
 	end)

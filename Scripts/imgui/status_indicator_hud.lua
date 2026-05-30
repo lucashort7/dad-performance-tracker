@@ -42,13 +42,9 @@ function M.Create()
 end
 
 function M.SetStatus(isOn)
-  -- TODO: review with gemy why this breaks logic...
-	-- if not M.statusIndicatorWidget or not M.statusIndicatorWidget:IsValid() then
-	-- 	M.Create()
-	-- end
-	-- if not M.statusIndicatorValue or not M.statusIndicatorValue:IsValid() then
-	-- 	return
-	-- end
+	if not M.statusIndicatorValue or not M.statusIndicatorValue:IsValid() then
+		return
+	end
 	pcall(function()
 		if isOn then
 			M.statusIndicatorValue:SetText(umg_factory.ToFText("ON"))
