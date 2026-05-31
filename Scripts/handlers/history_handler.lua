@@ -70,6 +70,27 @@ function M.SaveHistory(data)
   log.trace("[history_handler.SaveHistory()] [END]")
 end
 
+--- Fetch the Personal Best without updating it
+---@param session table The global state snapshot
+---@return table|nil The PB data or nil if not found
+function M.GetPB(session)
+	local pk = nil
+	if session.SongUniqueID and session.SongUniqueID ~= 0 and session.SongUniqueID ~= "" then
+		pk = tostring(session.SongUniqueID)
+	elseif session.AssetPath and session.AssetPath ~= "" then
+		pk = session.AssetPath
+	elseif session.SongName and session.SongName ~= "" then
+		pk = session.SongName
+	end
+
+	if not pk or pk == "" then
+		return nil
+	end
+
+	local history = M.LoadHistory()
+	return history[pk]
+end
+
 --- Core logic to update Personal Best
 ---@param session table The global state snapshot (__SessionAggAccuracy)
 function M.UpdateBestRun(session)
@@ -125,9 +146,10 @@ function M.UpdateBestRun(session)
 
 	-- Success Metric: Compare by TotalScore (CombatScore)
 	local isNewPB = false
-	if session.TotalScore > pb.highScore then
+	local currentScore = session.TotalScore or 0
+	if currentScore > pb.highScore or (pb.highScore == 0 and currentScore > 0) then
 		isNewPB = true
-		pb.highScore = session.TotalScore
+		pb.highScore = currentScore
 		pb.bestAcc = session.CurrentAccuracy
 		pb.bestRank = session.LastRank or "F" -- We might need to store the rank in state
 		pb.bestCombo = session.MaxCombo

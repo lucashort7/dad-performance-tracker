@@ -1,7 +1,9 @@
 local M = {}
 local umg_factory = require("utils.umg_factory")
 local hud_utils = require("utils.hud_utils")
+local log = require("utils.log")
 local abilities_catalog = require("domains.abilities_catalog")
+local history_handler = require("handlers.history_handler")
 local cfg = require("config")
 
 M.resultsWidget = nil
@@ -88,6 +90,37 @@ local function renderLeftColumn(container, stats, summary)
 		text = comboText,
 		color = comboColor,
 	})
+
+	-- 3. NEW PB Badge (Safe Detection)
+	local pbScore = 0
+	if summary.CachedPB and summary.CachedPB.highScore then
+		pbScore = summary.CachedPB.highScore
+	end
+
+	log.info(string.format("[ResultsUI] Comparing Score: Current=%d vs PB=%d", summary.TotalScore or 0, pbScore))
+
+	if summary.TotalScore > pbScore then
+		local pbHBox = umg_factory.CreateHorizontalBox(leftVBox, "PBBadgeHBox")
+		leftVBox:AddChild(pbHBox)
+
+		local pbText = umg_factory.CreateTextBlock(pbHBox, "NewPBText", {
+			size = 14,
+			text = " NEW HIGHSCORE!! ",
+			color = hud_utils.FSlateColor(1, 1, 1, 1), -- White text
+			skew = 0.1,
+			shadowOffset = { X = 1, Y = 1 },
+			shadowColor = hud_utils.FLinearColor(0, 0, 0, 1),
+		})
+
+		local pbBadge = umg_factory.CreateBorder(pbHBox, "NewPBBorder", {
+			content = pbText,
+			brushColor = hud_utils.FLinearColor(0.69, 0.15, 1, 0.8), -- Electric Purple Background
+			padding = { Left = 10, Top = 2, Right = 10, Bottom = 2 },
+		})
+		
+		-- Add a spacer after the badge
+		umg_factory.CreateTextBlock(leftVBox, "Spacer_AfterPB", { size = 6, text = " " })
+	end
 
 	umg_factory.CreateTextBlock(leftVBox, "Spacer_Left1", { size = 8, text = " " })
 	umg_factory.CreateTextBlock(leftVBox, "BreakdownTitle", {

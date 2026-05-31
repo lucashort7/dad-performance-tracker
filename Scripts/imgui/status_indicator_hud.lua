@@ -18,7 +18,7 @@ function M.Create()
 
 	umg_factory.CreateTextBlock(hBox, "StatusLabel", {
 		size = 8,
-		text = cfg.MOD_NAME .. ": ",
+		text = "PerformanceTracker: ",
 		color = hud_utils.FSlateColor(1, 1, 1, 0.6),
 	})
 

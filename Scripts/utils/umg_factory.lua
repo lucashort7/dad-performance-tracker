@@ -51,11 +51,19 @@ function M.CreateCanvas(tree, name)
 end
 
 function M.CreateVerticalBox(parent, name)
-	return StaticConstructObject(C.VerticalBox, parent, FName(name))
+	local box = StaticConstructObject(C.VerticalBox, parent, FName(name))
+	if box and box:IsValid() and parent.AddChild then
+		parent:AddChild(box)
+	end
+	return box
 end
 
 function M.CreateHorizontalBox(parent, name)
-	return StaticConstructObject(C.HorizontalBox, parent, FName(name))
+	local box = StaticConstructObject(C.HorizontalBox, parent, FName(name))
+	if box and box:IsValid() and parent.AddChild then
+		parent:AddChild(box)
+	end
+	return box
 end
 
 function M.CreateTextBlock(parent, name, params)
@@ -103,6 +111,9 @@ function M.CreateBorder(parent, name, params)
 		border:SetPadding(params.padding or { Left = 20, Top = 10, Right = 20, Bottom = 10 })
 		if params.content then
 			border:SetContent(params.content)
+		end
+		if parent.AddChild then
+			parent:AddChild(border)
 		end
 	end
 	return border

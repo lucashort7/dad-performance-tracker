@@ -72,7 +72,7 @@ for i, x in ipairs(modes) do
                         nameupper,
                         -- os.date("%H:%M:%S"),
                         x.name == 'trace' and " <[" .. lineinfo .. "> " or "",
-                        config.MOD_NAME,
+                        "PerformanceTracker",
                         msg))
 
     -- Output to log file
