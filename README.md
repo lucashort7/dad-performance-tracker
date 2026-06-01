@@ -17,6 +17,14 @@ A high-performance Lua mod for **Dead as Disco (Demo)** built on the UE4SS frame
 3. Extract the `PerformanceTracker` folder into `Dead as Disco Demo/Pagoda/Binaries/Win64/ue4ss/Mods/`.
 4. Open the `mods.txt` file located in the `Mods/` directory and ensure `PerformanceTracker : 1` is present.
 
+## Screenshots
+
+<div align="center">
+  <img src="assets/ingame-hud.png" width="400" alt="In-game Accuracy HUD" />
+  <img src="assets/results-hud.png" width="400" alt="Results Screen Badge" />
+  <p><i>Left: In-game HUD showing real-time accuracy. Right: Post-game results with the HighScore badge.</i></p>
+</div>
+
 ## Keybinds
 
 | Key | Action |
@@ -33,8 +41,8 @@ You can customize the visual behavior of the mod by editing the `config.lua` fil
 |---|---|---|
 | `cfg.LOG_LEVEL` | `"info"` | Determines the verbosity of the `UE4SS.log`. Set to `"debug"` or `"trace"` if you are a developer looking for detailed logs. |
 | `cfg.HUD_UPDATE_INTERVAL_MS` | `400` | The refresh rate (in milliseconds) for the live in-game HUD. Lower values update faster but may use slightly more CPU. |
-| `cfg.HUD_MAIN_ALLIGNMENT` | `"midbottomright_test"` | The screen anchor position for the in-game HUD. (e.g., `"topleft"`, `"bottomleft"`, `"midbottomright_test"`). |
-| `cfg.HUD_LABEL_LAYOUT` | `"friendly"` | The naming convention for tracked abilities. Can be `"full"`, `"friendly"`, or `"shortname"`. |
+| `cfg.HUD_MAIN_ALLIGNMENT` | `"bottomright"` | The screen anchor position for the in-game HUD. (Options: `"center"`, `"top"`, `"bottom"`, `"topleft"`, `"topright"`, `"bottomleft"`, `"bottomright"`). |
+| `cfg.HUD_LABEL_LAYOUT` | `"friendly"` | The naming convention for tracked abilities. Options: `"full"` (e.g., `GA_Player_Taunt_C`), `"friendly"` (e.g., `DanceMove`), or `"shortname"` (e.g., `DNC`). |
 
 > **Note:** The internal mod name and core timing variables should not be altered as they are critical for the mod's architecture and save system.
 
