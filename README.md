@@ -10,20 +10,14 @@ A high-performance Lua mod for **Dead as Disco (Demo)** built on the UE4SS frame
 - **Achievement Medals:** Displays a stylized `NEW HIGHSCORE!!` badge on the results screen when you beat your previous record.
 - **Lightweight & Performant:** Designed with a Domain-Driven Architecture and aggressive RAM caching to ensure 0 frame drops during intense gameplay.
 
-## Installation
+## Installation (Plug & Play)
 
-1. Ensure you have the latest version of [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS/releases) installed in your `Dead as Disco Demo/Pagoda/Binaries/Win64/` directory.
-2. Download the `DiscoTracker` mod folder.
-3. Extract the `DiscoTracker` folder into `Dead as Disco Demo/Pagoda/Binaries/Win64/ue4ss/Mods/`.
-4. Open the `mods.txt` file located in the `Mods/` directory and ensure `DiscoTracker : 1` is present.
-
-## Screenshots
-
-<div align="center">
-  <img src="docs/ingame-hud.png" width="400" alt="In-game Accuracy HUD" />
-  <img src="docs/results-hud.png" width="400" alt="Results Screen Badge" />
-  <p><i>Left: In-game HUD showing real-time accuracy. Right: Post-game results with the HighScore badge.</i></p>
-</div>
+1. **Download** the latest `DiscoTracker-v1.x.x.zip` from the [Releases](https://github.com/lucashort7/DiscoTracker/releases) page.
+2. **Locate** your game's binary folder. For Steam users, it is typically:
+   `Dead as Disco Demo > Pagoda > Binaries > Win64`
+3. **Extract** the contents of the ZIP file directly into the `Win64` folder.
+   - You should see `UE4SS.dll`, `dwmapi.dll`, and a `Mods` folder alongside the game's executable.
+4. **Launch the game.** The mod will load automatically!
 
 ## Keybinds
 
