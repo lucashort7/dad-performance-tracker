@@ -41,12 +41,28 @@ jobs:
         with:
           tag: ${{ inputs.tag }}
 
-      - name: Create Zip Artifact
+      - name: Create Release Structure
         run: |
-          mkdir -p ${{ env.build-dir }}
-          zip -r ${{ env.build-dir }}/PerformanceTracker-${{ inputs.tag }}.zip . -x "*.git*" "build/*" "exemplo-gitaction.yaml"
-          echo "artifact-name=PerformanceTracker-${{ inputs.tag }}.zip" >> "$GITHUB_ENV"
-          echo "artifact-path=${{ env.build-dir }}/PerformanceTracker-${{ inputs.tag }}.zip" >> "$GITHUB_ENV"
+          # 1. Cria a estrutura que o UE4SS espera dentro da pasta build
+          mkdir -p ${{ env.build-dir }}/DiscoTracker/Scripts/data
+          
+          # 2. Copia o código da pasta src para dentro de Scripts
+          cp -r src/* ${{ env.build-dir }}/DiscoTracker/Scripts/
+          
+          # 3. Copia outros ativos se existirem
+          [ -d "assets" ] && cp -r assets ${{ env.build-dir }}/DiscoTracker/
+          [ -d "docs" ] && cp -r docs ${{ env.build-dir }}/DiscoTracker/
+          
+          # 4. Copia arquivos de meta
+          cp LICENSE README.md CHANGELOG.md ${{ env.build-dir }}/DiscoTracker/
+          
+          # 5. Gera o zip a partir da pasta montada
+          cd ${{ env.build-dir }}
+          zip -r DiscoTracker-${{ inputs.tag }}.zip DiscoTracker/
+          
+          # 6. Exporta os caminhos para os próximos passos
+          echo "artifact-name=DiscoTracker-${{ inputs.tag }}.zip" >> "$GITHUB_ENV"
+          echo "artifact-path=${{ env.build-dir }}/DiscoTracker-${{ inputs.tag }}.zip" >> "$GITHUB_ENV"
 
       - name: Upload artifact to workflow
         uses: actions/upload-artifact@v4
