@@ -44,25 +44,41 @@ jobs:
       - name: Create Release Structure
         run: |
           # 1. Cria a estrutura que o UE4SS espera dentro da pasta build
-          mkdir -p ${{ env.build-dir }}/DiscoTracker/Scripts/data
-          
+          mkdir -p ${{ env.build-dir }}/Mods/DiscoTracker/Scripts/data
+          mkdir -p ${{ env.build-dir }}/Mods/shared
+          mkdir -p ${{ env.build-dir }}/UE4SS_Signatures
+
           # 2. Copia o código da pasta src para dentro de Scripts
-          cp -r src/* ${{ env.build-dir }}/DiscoTracker/Scripts/
-          
-          # 3. Copia outros ativos se existirem
-          [ -d "assets" ] && cp -r assets ${{ env.build-dir }}/DiscoTracker/
-          [ -d "docs" ] && cp -r docs ${{ env.build-dir }}/DiscoTracker/
-          
-          # 4. Copia arquivos de meta
-          cp LICENSE README.md CHANGELOG.md ${{ env.build-dir }}/DiscoTracker/
-          
-          # 5. Gera o zip a partir da pasta montada
+          cp -r src/* ${{ env.build-dir }}/Mods/DiscoTracker/Scripts/
+
+          # 3. Copia binários do UE4SS e Configs de assets/ue4ss/ para a RAIZ do zip
+          if [ -d "assets/ue4ss" ]; then
+            # Copia DLLs e INI
+            cp assets/ue4ss/*.dll ${{ env.build-dir }}/ 2>/dev/null || true
+            cp assets/ue4ss/*.ini ${{ env.build-dir }}/ 2>/dev/null || true
+
+            # Copia as Assinaturas (AOBs)
+            [ -d "assets/ue4ss/UE4SS_Signatures" ] && cp -r assets/ue4ss/UE4SS_Signatures/* ${{ env.build-dir }}/UE4SS_Signatures/
+
+            # Copia o Shared Helpers (UEHelpers) e mods.txt base
+            [ -d "assets/ue4ss/Mods/shared" ] && cp -r assets/ue4ss/Mods/shared/* ${{ env.build-dir }}/Mods/shared/
+            [ -f "assets/ue4ss/Mods/mods.txt" ] && cp assets/ue4ss/Mods/mods.txt ${{ env.build-dir }}/Mods/
+          fi
+
+          # 4. Copia Docs (screenshots para quem quiser ler offline)
+          [ -d "docs" ] && cp -r docs ${{ env.build-dir }}/Mods/DiscoTracker/docs/
+
+          # 5. Copia arquivos de meta para a pasta do mod
+          cp LICENSE README.md CHANGELOG.md ${{ env.build-dir }}/Mods/DiscoTracker/
+
+          # 6. Gera o zip a partir da pasta montada
           cd ${{ env.build-dir }}
-          zip -r DiscoTracker-${{ inputs.tag }}.zip DiscoTracker/
-          
-          # 6. Exporta os caminhos para os próximos passos
+          zip -r DiscoTracker-${{ inputs.tag }}.zip .
+
+          # 7. Exporta os caminhos para os próximos passos
           echo "artifact-name=DiscoTracker-${{ inputs.tag }}.zip" >> "$GITHUB_ENV"
           echo "artifact-path=${{ env.build-dir }}/DiscoTracker-${{ inputs.tag }}.zip" >> "$GITHUB_ENV"
+
 
       - name: Upload artifact to workflow
         uses: actions/upload-artifact@v4

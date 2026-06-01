@@ -1,6 +1,8 @@
 # === UE4SS Specific ===
-enabled.txt
 *.log
+
+# Allow enabled.txt for auto-loading
+!enabled.txt
 
 # === IDEs ===
 .vscode/
@@ -50,3 +52,9 @@ luac.out
 *.hex
 
 **/data/*.json
+
+# === UNIGNORE ASSETS FOR RELEASE ===
+!assets/ue4ss/**/*.dll
+!assets/ue4ss/**/*.ini
+!assets/ue4ss/**/*.json
+!assets/ue4ss/Mods/mods.txt
