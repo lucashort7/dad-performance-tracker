@@ -4,7 +4,7 @@ local json = require("utils.json")
 local log = require("utils.log")
 
 -- History file path
-local SAVE_PATH = "./ue4ss/Mods/PerformanceTracker/Data/performance_history.json"
+local SAVE_PATH = "./ue4ss/Mods/DiscoTracker/Scripts/data/performance_history.json"
 local TMP_PATH = SAVE_PATH .. ".tmp"
 
 local function _dmp_tbl(o)

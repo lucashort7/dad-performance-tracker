@@ -1,4 +1,4 @@
-# Performance Tracker Mod for Dead as Disco (UE4SS)
+# DiscoTracker Mod for Dead as Disco (UE4SS)
 
 A high-performance Lua mod for **Dead as Disco (Demo)** built on the UE4SS framework. This mod provides real-time combat analytics, dynamic visual feedback, and a persistent history system to track your personal best scores directly within the game.
 
@@ -13,15 +13,15 @@ A high-performance Lua mod for **Dead as Disco (Demo)** built on the UE4SS frame
 ## Installation
 
 1. Ensure you have the latest version of [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS/releases) installed in your `Dead as Disco Demo/Pagoda/Binaries/Win64/` directory.
-2. Download the `PerformanceTracker` mod folder.
-3. Extract the `PerformanceTracker` folder into `Dead as Disco Demo/Pagoda/Binaries/Win64/ue4ss/Mods/`.
-4. Open the `mods.txt` file located in the `Mods/` directory and ensure `PerformanceTracker : 1` is present.
+2. Download the `DiscoTracker` mod folder.
+3. Extract the `DiscoTracker` folder into `Dead as Disco Demo/Pagoda/Binaries/Win64/ue4ss/Mods/`.
+4. Open the `mods.txt` file located in the `Mods/` directory and ensure `DiscoTracker : 1` is present.
 
 ## Screenshots
 
 <div align="center">
-  <img src="assets/ingame-hud.png" width="400" alt="In-game Accuracy HUD" />
-  <img src="assets/results-hud.png" width="400" alt="Results Screen Badge" />
+  <img src="docs/ingame-hud.png" width="400" alt="In-game Accuracy HUD" />
+  <img src="docs/results-hud.png" width="400" alt="Results Screen Badge" />
   <p><i>Left: In-game HUD showing real-time accuracy. Right: Post-game results with the HighScore badge.</i></p>
 </div>
 
@@ -35,7 +35,7 @@ A high-performance Lua mod for **Dead as Disco (Demo)** built on the UE4SS frame
 
 ## Configuration (`config.lua`)
 
-You can customize the visual behavior of the mod by editing the `config.lua` file located in `Mods/PerformanceTracker/Scripts/config.lua`.
+You can customize the visual behavior of the mod by editing the `config.lua` file located in `Mods/DiscoTracker/Scripts/config.lua`.
 
 | Variable | Default Value | Description |
 |---|---|---|
@@ -48,9 +48,9 @@ You can customize the visual behavior of the mod by editing the `config.lua` fil
 
 ## Troubleshooting
 
-- **HUD isn't showing:** Press **F4** to force visibility. Ensure `PerformanceTracker : 1` is in your `mods.txt`.
+- **HUD isn't showing:** Press **F4** to force visibility. Ensure `DiscoTracker : 1` is in your `mods.txt`.
 - **Logs are missing/empty:** Check that `cfg.LOG_LEVEL` is set to `"info"` or `"debug"`.
-- **PB isn't saving:** The mod saves data to `Mods/PerformanceTracker/Data/performance_history.json`. Ensure the game has write permissions to this directory.
+- **PB isn't saving:** The mod saves data to `Mods/DiscoTracker/Scripts/data/performance_history.json`. Ensure the game has write permissions to this directory.
 
 ## Architecture Highlights
 
