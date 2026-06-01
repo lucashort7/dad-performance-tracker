@@ -70,6 +70,10 @@ jobs:
           cd "${{ env.STAGING_DIR }}"
           zip -r "../../$ARTIFACT_NAME" .
           
+          # fix: artifact is actually at repo root/ARTIFACT_NAME, let's move it to BUILD_DIR
+          cd ../..
+          mv "$ARTIFACT_NAME" "${{ env.BUILD_DIR }}/$ARTIFACT_NAME"
+          
           echo "artifact-name=$ARTIFACT_NAME" >> "$GITHUB_ENV"
           echo "artifact-path=${{ env.BUILD_DIR }}/$ARTIFACT_NAME" >> "$GITHUB_ENV"
 
