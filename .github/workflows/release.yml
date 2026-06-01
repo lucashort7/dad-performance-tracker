@@ -1,110 +1,102 @@
 name: Release
-run-name: ${{ format('{0} {1}', inputs.is-dry-run && 'Dry-run' || 'Release', inputs.tag) }}
+run-name: ${{ format('{0} {1}', inputs.is-dry-run && 'dry-run' || 'release', inputs.tag) }}
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag / Version number"
+        description: "tag / version number (e.g., v1.0.0)"
         required: true
       is-dry-run:
-        description: "Dry-run (do not publish, only test build)"
+        description: "dry-run (build only, no publishing)"
         type: boolean
+        default: false
 
 permissions:
-  contents: write # required for pushing to the repository and creating releases
+  contents: write
 
 env:
-  changelog: CHANGELOG.md
-  build-dir: build
-  artifact-content-type: application/zip
+  CHANGELOG_FILE: CHANGELOG.md
+  BUILD_DIR: build
+  STAGING_DIR: build/staging
+  MOD_NAME: DiscoTracker
 
 jobs:
   release:
-    name: ${{ format('{0} {1}', inputs.is-dry-run && 'Dry-run' || 'Release', inputs.tag) }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check input tag format
+      - name: validate version tag
         run: |
           if ! echo "${{ inputs.tag }}" | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error title=Invalid package version number::Version numbers must follow the Major.Minor.Patch format (e.g. 1.0.0 or v1.0.0)."
+            echo "::error title=invalid tag::version must follow semver (e.g., 1.0.0 or v1.0.0)"
             exit 1
           fi
 
-      - name: Checkout files
+      - name: checkout code
         uses: actions/checkout@v4
         with:
           lfs: true
+          fetch-depth: 0
 
-      - name: Rotate unreleased section in changelog
+      - name: prepare changelog
+        if: ${{ !inputs.is-dry-run }}
         uses: thomaseizinger/keep-a-changelog-new-release@v3
         with:
           tag: ${{ inputs.tag }}
 
-      - name: Create Release Structure
+      - name: assemble release bundle
         run: |
-          # 1. Cria a estrutura que o UE4SS espera dentro da pasta build
-          mkdir -p ${{ env.build-dir }}/Mods/DiscoTracker/Scripts/data
-          mkdir -p ${{ env.build-dir }}/Mods/shared
-          mkdir -p ${{ env.build-dir }}/UE4SS_Signatures
+          # setup clean staging area
+          rm -rf ${{ env.BUILD_DIR }}
+          mkdir -p "${{ env.STAGING_DIR }}/ue4ss/Mods/${{ env.MOD_NAME }}/Scripts/data"
+          
+          # copy mod source scripts
+          cp -r src/* "${{ env.STAGING_DIR }}/ue4ss/Mods/${{ env.MOD_NAME }}/Scripts/"
+          
+          # dynamically generate enabled.txt for auto-loading
+          touch "${{ env.STAGING_DIR }}/ue4ss/Mods/${{ env.MOD_NAME }}/enabled.txt"
 
-          # 2. Copia o código da pasta src para dentro de Scripts
-          cp -r src/* ${{ env.build-dir }}/Mods/DiscoTracker/Scripts/
-
-          # 3. Copia binários do UE4SS e Configs de assets/ue4ss/ para a RAIZ do zip
-          if [ -d "assets/ue4ss" ]; then
-            # Copia DLLs e INI
-            cp assets/ue4ss/*.dll ${{ env.build-dir }}/ 2>/dev/null || true
-            cp assets/ue4ss/*.ini ${{ env.build-dir }}/ 2>/dev/null || true
-
-            # Copia as Assinaturas (AOBs)
-            [ -d "assets/ue4ss/UE4SS_Signatures" ] && cp -r assets/ue4ss/UE4SS_Signatures/* ${{ env.build-dir }}/UE4SS_Signatures/
-
-            # Copia o Shared Helpers (UEHelpers) e mods.txt base
-            [ -d "assets/ue4ss/Mods/shared" ] && cp -r assets/ue4ss/Mods/shared/* ${{ env.build-dir }}/Mods/shared/
-            [ -f "assets/ue4ss/Mods/mods.txt" ] && cp assets/ue4ss/Mods/mods.txt ${{ env.build-dir }}/Mods/
+          # inject all assets directly to zip root
+          if [ -d "assets" ]; then
+            cp -r assets/* "${{ env.STAGING_DIR }}/"
           fi
 
-          # 4. Copia Docs (screenshots para quem quiser ler offline)
-          [ -d "docs" ] && cp -r docs ${{ env.build-dir }}/Mods/DiscoTracker/docs/
+          # add documentation and meta files
+          [ -d "docs" ] && cp -r docs "${{ env.STAGING_DIR }}/ue4ss/Mods/${{ env.MOD_NAME }}/"
+          cp LICENSE README.md ${{ env.CHANGELOG_FILE }} "${{ env.STAGING_DIR }}/ue4ss/Mods/${{ env.MOD_NAME }}/"
 
-          # 5. Copia arquivos de meta para a pasta do mod
-          cp LICENSE README.md CHANGELOG.md ${{ env.build-dir }}/Mods/DiscoTracker/
+          # generate final archive from staging root
+          ARTIFACT_NAME="${{ env.MOD_NAME }}-${{ inputs.tag }}.zip"
+          cd "${{ env.STAGING_DIR }}"
+          zip -r "../../$ARTIFACT_NAME" .
+          
+          echo "artifact-name=$ARTIFACT_NAME" >> "$GITHUB_ENV"
+          echo "artifact-path=${{ env.BUILD_DIR }}/$ARTIFACT_NAME" >> "$GITHUB_ENV"
 
-          # 6. Gera o zip a partir da pasta montada
-          cd ${{ env.build-dir }}
-          zip -r DiscoTracker-${{ inputs.tag }}.zip .
-
-          # 7. Exporta os caminhos para os próximos passos
-          echo "artifact-name=DiscoTracker-${{ inputs.tag }}.zip" >> "$GITHUB_ENV"
-          echo "artifact-path=${{ env.build-dir }}/DiscoTracker-${{ inputs.tag }}.zip" >> "$GITHUB_ENV"
-
-
-      - name: Upload artifact to workflow
+      - name: upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.artifact-name }}
           path: ${{ env.artifact-path }}
-          retention-days: 1
+          retention-days: 7
 
-      - name: Tag and push to repository
+      - name: git tag and push
         if: ${{ !inputs.is-dry-run }}
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ${{ env.changelog }}
-          git commit --message "Release ${{ inputs.tag }}"
-          git tag ${{ inputs.tag }} --annotate --message "Release ${{ inputs.tag }}"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add ${{ env.CHANGELOG_FILE }}
+          git commit -m "chore: release ${{ inputs.tag }}"
+          git tag -a ${{ inputs.tag }} -m "release ${{ inputs.tag }}"
           git push origin HEAD:${{ github.ref_name }} --tags
 
-      - name: Create release
-        id: create_release
+      - name: publish release
         if: ${{ !inputs.is-dry-run }}
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ inputs.tag }}
           tag_name: ${{ inputs.tag }}
           files: ${{ env.artifact-path }}
-          body_path: ${{ env.changelog }}
+          body_path: ${{ env.CHANGELOG_FILE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

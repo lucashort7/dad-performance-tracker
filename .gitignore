@@ -54,7 +54,7 @@ luac.out
 **/data/*.json
 
 # === UNIGNORE ASSETS FOR RELEASE ===
-!assets/ue4ss/**/*.dll
-!assets/ue4ss/**/*.ini
-!assets/ue4ss/**/*.json
-!assets/ue4ss/Mods/mods.txt
+!assets/**/*.dll
+!assets/**/*.ini
+!assets/**/*.json
+!assets/Mods/mods.txt

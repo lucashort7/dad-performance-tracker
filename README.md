@@ -1,6 +1,10 @@
-# DiscoTracker Mod for Dead as Disco (UE4SS)
+<div align="center">
+  <img src="docs/logo.png" width="300" alt="DiscoTracker Logo" />
+  <h1>DiscoTracker Mod for Dead as Disco (UE4SS)</h1>
+  <p><i>The ultimate high-performance performance analytics tool for Dead as Disco (Demo)</i></p>
+</div>
 
-A high-performance Lua mod for **Dead as Disco (Demo)** built on the UE4SS framework. This mod provides real-time combat analytics, dynamic visual feedback, and a persistent history system to track your personal best scores directly within the game.
+A high-performance Lua mod built on the UE4SS framework. This mod provides real-time combat analytics, dynamic visual feedback, and a persistent history system to track your personal best scores directly within the game.
 
 ## Features
 
@@ -13,10 +17,9 @@ A high-performance Lua mod for **Dead as Disco (Demo)** built on the UE4SS frame
 ## Installation (Plug & Play)
 
 1. **Download** the latest `DiscoTracker-v1.x.x.zip` from the [Releases](https://github.com/lucashort7/DiscoTracker/releases) page.
-2. **Locate** your game's binary folder. For Steam users, it is typically:
+2. **Locate** your game's binary folder. For Steam users:
    `Dead as Disco Demo > Pagoda > Binaries > Win64`
-3. **Extract** the contents of the ZIP file directly into the `Win64` folder.
-   - You should see `UE4SS.dll`, `dwmapi.dll`, and a `Mods` folder alongside the game's executable.
+3. **Extract** and drag the **`ue4ss/`** folder from the ZIP directly into the `Win64` folder.
 4. **Launch the game.** The mod will load automatically!
 
 ## Keybinds
