@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-06-01
+
 ### Added
 
 - **Results Badge:** Stylized high-score indicator on the end-of-song screen.
@@ -28,3 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Performance tracking engine for Dead as Disco.
 - Accuracy and Combo monitoring.
 - HighScore persistence.
+
+[unreleased]: https://github.com/lucashort7/dad-performance-tracker/compare/1.1.1...HEAD
+[1.1.1]: https://github.com/lucashort7/dad-performance-tracker/compare/b223d0137355dfe54bee9371b03a50613bc9b704...1.1.1
