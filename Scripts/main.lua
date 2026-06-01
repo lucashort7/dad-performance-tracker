@@ -18,6 +18,8 @@ _G.__SessionAggAccuracy = _G.__SessionAggAccuracy or {
   PerfectHits = 0,
   CurrentAccuracy = 100.0,
   MaxCombo = 0,
+  -- innacurate but helps to determine if we had a combo at all without waiting for end of song
+  internalMaxCombo = 0, 
   TotalScore = 0,
   IsFullCombo = true,
   LastRank = "F",
@@ -27,6 +29,7 @@ _G.__SessionAggAccuracy = _G.__SessionAggAccuracy or {
   LastActionType = "None",
   GranularStats = {},
   IsTrackerVisible = true,
+  IsNewPB = false,
 
   -- Hook Control Flags
   __setup_hooks = false,
@@ -47,6 +50,7 @@ local function ResetSessionTracker()
 	state.PerfectHits = 0
 	state.CurrentAccuracy = 100.0
 	state.MaxCombo = 0
+	state.internalMaxCombo = 0
 	state.TotalScore = 0
 	state.IsFullCombo = true
 	state.SongName = "Unknown"
@@ -55,6 +59,7 @@ local function ResetSessionTracker()
 	state.LastMusicTime = 0.0
 	state.LastActionType = "Reset"
 	state.GranularStats = {}
+	state.IsNewPB = false
 end
 
 local function CaptureSongMetadata()
@@ -89,15 +94,11 @@ local function UpdateGlobalAccuracy(isPerfect, musicTime, actionType)
 		return
 	end
 
-	-- -- FALLBACK: If we are hitting things but not in IN_GAME state, force it now.
-	-- if hud_handler.CurrentState ~= hud_handler.States.IN_GAME then
-	-- 	ResetSessionTracker()
-	-- 	CaptureSongMetadata()
-	-- 	hud_handler.SetState(hud_handler.States.IN_GAME, state)
-	-- 	log.debug("Gameplay Started via Combat Fallback (Step 4)")
-	-- end
-
-  hud_handler.SetState(hud_handler.States.IN_GAME, state)
+	-- FALLBACK: If we are hitting things but not in IN_GAME state, force it now.
+	if hud_handler.CurrentState ~= hud_handler.States.IN_GAME then
+		hud_handler.SetState(hud_handler.States.IN_GAME, state)
+		log.debug("Gameplay Started via Combat Fallback (Step 4)")
+	end
 
 	if not state.GranularStats[actionType] then
 		state.GranularStats[actionType] = {
@@ -121,19 +122,21 @@ local function UpdateGlobalAccuracy(isPerfect, musicTime, actionType)
 		state.CurrentAccuracy = (state.PerfectHits / state.TotalActions) * 100.0
 	end
 
+	-- -- Poll Score/Combo to keep state updated even if we die later
+	-- pcall(function()
+	-- 	local PC = UEHelpers.GetPlayerController()
+	-- 	if PC and PC:IsValid() then
+	-- 		local ScoreComp = PC:GetScoreComponent()
+	-- 		if ScoreComp and ScoreComp:IsValid() then
+	-- 			state.TotalScore = ScoreComp:GetCombatScore() or state.TotalScore
+	-- 			state.MaxCombo = ScoreComp:GetMaxComboCount() or state.MaxCombo
+	-- 		end
+	-- 	end
+	-- end)
+
 	state.LastActionWasPerfect = isPerfect
 	state.LastMusicTime = musicTime
 	state.LastActionType = actionType or "Unknown"
-
-	-- log.debug(
-	-- 	string_format(
-	-- 		"METRIC UPDATE: %s | Total: %d | Perfect: %d | Acc: %.2f%%",
-	-- 		actionType,
-	-- 		state.TotalActions,
-	-- 		state.PerfectHits,
-	-- 		state.CurrentAccuracy
-	-- 	)
-	-- )
 end
 
 local GAME_STATE_PATHS = {
@@ -176,20 +179,23 @@ end
 local function GameModeEndSongHook()
 	local state = _G.__SessionAggAccuracy
 
-  -- TODO: maybe its `history_handler` responsability
 	pcall(function()
 		local PC = UEHelpers.GetPlayerController()
 		if PC and PC:IsValid() then
 			local ScoreComp = PC:GetScoreComponent()
 			if ScoreComp and ScoreComp:IsValid() then
-				state.MaxCombo = ScoreComp:GetMaxComboCount() or 0
-				state.TotalScore = ScoreComp:GetCombatScore() or 0
+				-- Use current state as fallback to avoid overwriting with 0 on death
+				state.MaxCombo = ScoreComp:GetMaxComboCount() or state.MaxCombo
+				state.TotalScore = ScoreComp:GetCombatScore() or state.TotalScore
 			end
 		end
 	end)
+
 	if state.TotalActions > 0 then
 		state.LastRank, _ = require("imgui.results_hud").GetRank(state.CurrentAccuracy, state.TotalActions)
+		-- Just update the history, UI will handle the "New PB" detection independently
 		history_handler.UpdateBestRun(state)
+		log.info(string.format("Match Ended: Score=%d", state.TotalScore))
 	end
 end
 
@@ -205,8 +211,15 @@ local function GameModeEntryPointHook()
 		local okCombo, _ = pcall(function()
 			RegisterHook(GAME_STATE_PATHS.CombatScorePath .. ":HandleComboCountChanged", function(self, ComboCount)
 				local innerState = _G.__SessionAggAccuracy
-				if ComboCount:get() == 0 and innerState.TotalActions > 0 then
+        local combo = ComboCount:get()
+        innerState.internalMaxCombo = combo >= innerState.internalMaxCombo and combo or innerState.internalMaxCombo
+
+        if ComboCount:get() == 0 and innerState.internalMaxCombo > 0 then
 					innerState.IsFullCombo = false
+          log.debug("isFullCombo: false (Combo broke at " .. 
+                      tostring(innerState.LastMusicTime) .. 
+                      "s -> MaxCombo: " .. tostring(innerState.internalMaxCombo) .. ")"
+                    )
 				end
 			end)
 		end)
@@ -218,11 +231,6 @@ local function GameModeEntryPointHook()
 
       RegisterHook("/Game/Pagoda/Characters/Player/BP_PagodaPlayerController.BP_PagodaPlayerController_C:ReceiveEndPlay", function( self, EndPlayReason  )
         hud_handler.SetState(hud_handler.States.PRE_GAME, state)
-        -- Destroyed = 0,
-        -- LevelTransition = 1,
-        -- EndPlayInEditor = 2,
-        -- RemovedFromWorld = 3,
-        -- Quit = 4,
         log.debug("EndPlayReason: " .. tostring(EndPlayReason:get()))
       end)
 
@@ -231,6 +239,7 @@ local function GameModeEntryPointHook()
 				-- ALWAYS reset on start gestures to handle retries properly
 				ResetSessionTracker()
 				CaptureSongMetadata()
+				innerState.CachedPB = history_handler.GetPB(innerState)
 				hud_handler.SetState(hud_handler.States.IN_GAME, innerState)
 				log.debug("Gameplay Started/Reset! (Step 4) -> BP_InfiniteDisco_C:InitPlayerAttributes")
       end)
@@ -250,7 +259,6 @@ local function GameModeEntryPointHook()
 				log.debug("Gameplay End detected (Results)")
 			end)
 
-      -- from end results screen to songselect, end_result_hud needs to hide
       RegisterHook("/Game/Pagoda/UI/Game/WBP_LevelEndScreen.WBP_LevelEndScreen_C:Destruct", function()
 				hud_handler.HideResultsUI()
 				log.debug("WBP_LevelEndScreen_C:Destruct")
@@ -323,4 +331,26 @@ end)
 RegisterKeyBind(Key.F5, function()
 	_G.__SessionAggAccuracy.IsTrackerVisible = false
   hud_handler.UpdateModStatus(_G.__SessionAggAccuracy)
+end)
+
+-- ============ DEBUG / SANDBOX KEYBINDS ============
+RegisterKeyBind(Key.F6, function()
+    log.info("[DEBUG] Triggering Mock Results Screen...")
+    local mockState = {
+        SongName = "DEBUG SONG (SANDBOX)",
+        TotalActions = 100,
+        PerfectHits = 95,
+        CurrentAccuracy = 95.0,
+        MaxCombo = 42,
+        TotalScore = 999999, -- High enough to trigger PB badge
+        IsFullCombo = false,
+        IsNewPB = true,
+        GranularStats = {
+            Attack = { Total = 50, Perfect = 48 },
+            Dodge = { Total = 30, Perfect = 28 },
+            Special = { Total = 20, Perfect = 19 },
+        },
+        CachedPB = { highScore = 1000 } -- Lower than mock score
+    }
+    hud_handler.SetState(hud_handler.States.RESULTS, mockState)
 end)

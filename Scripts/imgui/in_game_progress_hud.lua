@@ -9,19 +9,22 @@ M.progressWidget = nil
 M.textControls = {}
 M.summaryControls = {}
 
--- TODO: Review this, maybe we can use some basic colors
----       like from green to red based on accuracy thresholds?
+--- Dynamic color scaling based on accuracy (Gaming Logic)
 local function GetAccuracyColor(acc)
 	if acc >= 100 then
-		return hud_utils.FSlateColor(0, 1, 0, 0.9) -- Bright Green
-	elseif acc >= 85 then
-		return hud_utils.FSlateColor(0.8, 0, 1, 0.9) -- Pink
-	elseif acc >= 70 then
-		return hud_utils.FSlateColor(0, 0.8, 1, 0.9) -- Cyan
-	elseif acc >= 40 then
-		return hud_utils.FSlateColor(0.65, 1, 0, 0.9) -- Yellow
+		return hud_utils.FSlateColor(0.69, 0.15, 1, 1) -- Electric Purple (SS)
+	elseif acc >= 98 then
+		return hud_utils.FSlateColor(1, 0, 1, 1) -- Bright Magenta (S+)
+	elseif acc >= 95 then
+		return hud_utils.FSlateColor(1, 1, 0, 1) -- Yellow (S)
+	elseif acc >= 90 then
+		return hud_utils.FSlateColor(0, 1, 0.5, 1) -- Emerald (A+)
+	elseif acc >= 80 then
+		return hud_utils.FSlateColor(0, 1, 0, 1) -- Green (B)
+	elseif acc >= 60 then
+		return hud_utils.FSlateColor(1, 0.5, 0, 1) -- Orange (C)
 	else
-		return hud_utils.FSlateColor(1, 0.033, 0.033, 0.9) -- Lightly Red
+		return hud_utils.FSlateColor(1, 0, 0, 1) -- Red (D/F)
 	end
 end
 
@@ -41,29 +44,48 @@ function M.Create()
 	umg_factory.CreateTextBlock(summaryHBox, "TextBlock_Summary_Label", {
 		size = 11,
 		text = "Session: ",
-    skew = 0.176,
-    shadowOffset = { X = 0.2, Y = 0.2 },
-    shadowColor = hud_utils.FLinearColor(0, 0, 0, 1),
+		skew = 0.176,
+		shadowOffset = { X = 0.2, Y = 0.2 },
+		shadowColor = hud_utils.FLinearColor(0, 0, 0, 1),
 	})
 
 	local summaryTotalText = umg_factory.CreateTextBlock(summaryHBox, "TextBlock_Summary_Total", {
 		size = 9,
 		text = "0 hits ",
-    color = hud_utils.FSlateColor(1, 1, 1, 0.6) -- slighty greyish 
+		color = hud_utils.FSlateColor(1, 1, 1, 0.6) -- slighty greyish 
 	})
 
 	local summaryAccText = umg_factory.CreateTextBlock(summaryHBox, "TextBlock_Summary_Acc", {
 		size = 9,
-		text = "(100%)",
+		text = "(100%) ",
 		color = GetAccuracyColor(100),
+	})
+
+	-- PB Summary Line
+	local pbHBox = umg_factory.CreateHorizontalBox(vBox, "HBox_InGame_PB")
+	vBox:AddChild(pbHBox)
+
+	umg_factory.CreateTextBlock(pbHBox, "TextBlock_PB_Label", {
+		size = 11,
+		text = "PB: ",
+		skew = 0.176,
+		shadowOffset = { X = 0.2, Y = 0.2 },
+		shadowColor = hud_utils.FLinearColor(0, 0, 0, 1),
+	})
+
+	local summaryPBText = umg_factory.CreateTextBlock(pbHBox, "TextBlock_Summary_PB", {
+		size = 9,
+		text = "---",
+		color = hud_utils.FSlateColor(0.8, 0.8, 0.8, 0.8),
 	})
 
 	M.summaryControls = {
 		Total = summaryTotalText,
 		Accuracy = summaryAccText,
+		PB = summaryPBText,
 	}
 
-  umg_factory.CreateTextBlock(vBox, "Separator", { size = 8, text = "________________________________________" })
+	umg_factory.CreateTextBlock(vBox, "Separator", { size = 8, text = "________________________________________" })
 	umg_factory.CreateTextBlock(vBox, "Spacer", { size = 4, text = " " })
 
 	for abilityKey, _ in pairs(abilities_catalog.ABILITIES) do
@@ -75,15 +97,15 @@ function M.Create()
 		umg_factory.CreateTextBlock(hBox, "TextBlock_Label_" .. abilityKey, {
 			size = 10,
 			text = string.format("%s: ", label),
-      skew = 0.176,
-      shadowOffset = { X = 0.2, Y = 0.2 },
-      shadowColor = hud_utils.FLinearColor(0, 0, 0, 1),
+			skew = 0.176,
+			shadowOffset = { X = 0.2, Y = 0.2 },
+			shadowColor = hud_utils.FLinearColor(0, 0, 0, 1),
 		})
 
 		local statsText = umg_factory.CreateTextBlock(hBox, "TextBlock_Stats_" .. abilityKey, {
 			size = 8,
 			text = "[0/0] ",
-      color = hud_utils.FSlateColor(1, 1, 1, 0.7) -- slighty greyish 
+			color = hud_utils.FSlateColor(1, 1, 1, 0.7) -- slighty greyish 
 		})
 
 		local accText = umg_factory.CreateTextBlock(hBox, "TextBlock_Acc_" .. abilityKey, {
@@ -124,6 +146,10 @@ function M.Update(state)
 			)
 			M.summaryControls.Accuracy:SetText(umg_factory.ToFText(string.format("(%.1f%%)", state.CurrentAccuracy)))
 			M.summaryControls.Accuracy:SetColorAndOpacity(GetAccuracyColor(state.CurrentAccuracy))
+			
+			if state.CachedPB and M.summaryControls.PB then
+				M.summaryControls.PB:SetText(umg_factory.ToFText(string.format("%d pts (%.1f%%)", state.CachedPB.highScore or 0, state.CachedPB.bestAcc or 0.0)))
+			end
 		end)
 	end
 

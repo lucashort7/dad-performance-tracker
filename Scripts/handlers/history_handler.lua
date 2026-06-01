@@ -3,8 +3,9 @@ local M = {}
 local json = require("utils.json")
 local log = require("utils.log")
 
--- Constant file path in mod directory
+-- History file path
 local SAVE_PATH = "./ue4ss/Mods/PerformanceTracker/Data/performance_history.json"
+local TMP_PATH = SAVE_PATH .. ".tmp"
 
 local function _dmp_tbl(o)
   if type(o) == 'table' then
@@ -19,6 +20,30 @@ local function _dmp_tbl(o)
   end
 end
 
+--- INTERNAL FUNCTION: Centralizes and sanitizes Primary Key (PK) generation
+local function _getCleanPrimaryKey(session)
+	if session.SongUniqueID and session.SongUniqueID ~= 0 
+      and session.SongUniqueID ~= "" and session.SongUniqueID ~= "0" then
+		return tostring(session.SongUniqueID)
+	end
+
+	if session.AssetPath and session.AssetPath ~= "" then
+		-- Applies the pattern to capture only what comes after the last dot
+		-- Example: "/Game/Pagoda/Maps/Song_Disco.Song_Disco" becomes "Song_Disco"
+		local clean = session.AssetPath:match("([^.]+)$")
+		if clean and clean ~= "" then
+			return clean
+		end
+		return session.AssetPath
+	end
+
+	if session.SongName and session.SongName ~= "" then
+		return session.SongName
+	end
+
+	return nil
+end
+
 ---@return table
 function M.LoadHistory()
   log.trace("[history_handler.LoadHistory()] [START]")
@@ -29,7 +54,6 @@ function M.LoadHistory()
 	end
 
 	local content = f:read("*all")
-  log.trace("[history_handler.content] " .. _dmp_tbl(content))
 	f:close()
 
 	if not content or content == "" then
@@ -56,61 +80,76 @@ function M.SaveHistory(data)
 		return
 	end
 
-	local f = io.open(SAVE_PATH, "w")
+	-- 1. ATOMIC WRITE: Write first to a temporary file (.tmp)
+	local f = io.open(TMP_PATH, "w")
 	if f then
-    log.debug("Writing Data: " .. _dmp_tbl(data))
-    -- TODO: review this -> writing in a long run can be costly and 
-    --        we might want to consider a more efficient storage solution 
-    --        if the data grows significantly
+		log.debug("Writing Data to TMP: " .. _dmp_tbl(data))
 		f:write(content)
 		f:close()
+
+		-- 2. SAFE SWAP (Windows Compatible):
+		-- Windows blocks os.rename if the destination file already exists.
+		-- To bypass this, we remove the old file and instantly rename the temporary one.
+		os.remove(SAVE_PATH)
+		local success, err = os.rename(TMP_PATH, SAVE_PATH)
+
+		if success then
+			log.debug("History saved atomically successfully.")
+		else
+			log.error("Atomic swap failed: " .. tostring(err) .. ". Executing fallback write.")
+			-- Emergency fallback in case the OS locks the rename process
+			local f_fallback = io.open(SAVE_PATH, "w")
+			if f_fallback then
+				f_fallback:write(content)
+				f_fallback:close()
+			end
+		end
 	else
-		log.error("Could not open history file for writing.")
+		log.error("Could not open temporary history file for writing.")
 	end
   log.trace("[history_handler.SaveHistory()] [END]")
 end
 
---- Core logic to update Personal Best
----@param session table The global state snapshot (__SessionAggAccuracy)
-function M.UpdateBestRun(session)
-  log.debug("Updating best run for song: " .. (session.SongName or "Unknown"))
-	-- PK is SongHash, fallback to SongID, then AssetPath, then Name
-  -- TODO: SongHash doesn't exist...
-	-- local pk = session.SongHash
-  local pk = nil
-  if not pk or pk == "" then
-    log.trace("session.SongUniqueID")
-    if session.SongUniqueID and session.SongUniqueID ~= 0 then
-		  pk = tostring(session.SongUniqueID)
-    end
-	end
-  if not pk or pk == "0" then
-    -- TODO: maybe we get only the last part of 
-    --        the AssetPath as PK? string too long
-    log.trace("session.AssetPath")
-		pk = session.AssetPath
-	end
-	
+--- Fetch the Personal Best without updating it
+---@param session table The global state snapshot
+---@return table|nil The PB data or nil if not found
+function M.GetPB(session)
+	local pk = _getCleanPrimaryKey(session)
+
 	if not pk or pk == "" then
-    log.trace("session.SongName")
-		pk = session.SongName
+		return nil
 	end
-  log.debug("Determined PK for history: " .. tostring(pk))
-  if not pk or pk == "" then
-    log.error("Could not determine a valid PK for history. Aborting update.")
-    return
-  end
 
 	local history = M.LoadHistory()
-  local hist_count = 0
-  for _ in pairs(history) do
-      hist_count = hist_count + 1
-  end
-  log.debug("Current history entries: " .. tostring(hist_count))
+	return history[pk]
+end
+
+--- Core logic to update Personal Best
+---@param session table The global state snapshot (__SessionAggAccuracy)
+---@return boolean, table Returns whether it's a new record (isNewPB) and the updated PB data
+function M.UpdateBestRun(session)
+  log.debug("Updating best run for song: " .. (session.SongName or "Unknown"))
+
+	-- Execute primary key sanitization
+	local pk = _getCleanPrimaryKey(session)
+	log.debug("Determined PK for history: " .. tostring(pk))
+  
+	if not pk or pk == "" then
+		log.error("Could not determine a valid PK for history. Aborting update.")
+		return false, nil
+	end
+
+	local history = M.LoadHistory()
+	local hist_count = 0
+	for _ in pairs(history) do
+		hist_count = hist_count + 1
+	end
+	log.debug("Current history entries: " .. tostring(hist_count))
+  
 	local pb = history[pk]
 		or {
 			songName = session.SongName,
-			songID = session.SongID,
+			songID = session.SongUniqueID or session.SongID or "Unknown",
 			highScore = 0,
 			bestAcc = 0,
 			bestRank = "F",
@@ -118,18 +157,19 @@ function M.UpdateBestRun(session)
 			playCount = 0,
 			isFC = false,
 		}
-  log.debug("Local Personal Best: " .. _dmp_tbl(pb))
+	log.debug("Local Personal Best: " .. _dmp_tbl(pb))
 
-	-- Increment play count
+	-- Increment the play counter
 	pb.playCount = pb.playCount + 1
 
-	-- Success Metric: Compare by TotalScore (CombatScore)
+	-- Business Rule: Update statistics if the current Score breaks the previous high score
 	local isNewPB = false
-	if session.TotalScore > pb.highScore then
+	local currentScore = session.TotalScore or 0
+	if currentScore > pb.highScore or (pb.highScore == 0 and currentScore > 0) then
 		isNewPB = true
-		pb.highScore = session.TotalScore
+		pb.highScore = currentScore
 		pb.bestAcc = session.CurrentAccuracy
-		pb.bestRank = session.LastRank or "F" -- We might need to store the rank in state
+		pb.bestRank = session.LastRank or "F"
 		pb.bestCombo = session.MaxCombo
 		pb.isFC = session.IsFullCombo
 	end

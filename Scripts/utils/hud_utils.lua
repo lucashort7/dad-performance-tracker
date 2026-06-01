@@ -20,7 +20,8 @@ M.Alignments = {
 	topleft = { anchor = { 0, 0 }, align = { 0, 0 }, pos = { 10, 10 } },
 	topright = { anchor = { 1, 0 }, align = { 1, 0 }, pos = { -10, 10 } },
 	bottomleft = { anchor = { 0, 1 }, align = { 0, 1 }, pos = { 10, -10 } },
-	bottomright = { anchor = { 1, 1 }, align = { 1, 1 }, pos = { -10, -10 } },
+	-- bottomright = { anchor = { 1, 1 }, align = { 1, 1 }, pos = { -10, -10 } },
+	bottomright = { anchor = { 1, 0.85 }, align = { 1, 0.85 }, pos = { -9, -8 } },
 
 	-- only for testing
 	upper_left = { anchor = { 0, 0.25 }, align = { 0, 0.25 }, pos = { 10, 7.5 } },

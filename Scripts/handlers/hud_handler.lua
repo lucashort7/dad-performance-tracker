@@ -5,6 +5,7 @@ local results_hud = require("imgui.results_hud")
 local status_indicator_hud = require("imgui.status_indicator_hud")
 local hud_utils = require("utils.hud_utils")
 local log = require("utils.log")
+local history_handler = require("handlers.history_handler")
 
 -- Enums for Mod State
 M.States = {
@@ -46,6 +47,7 @@ function M.SetState(newState, sessionState)
 		results_hud.Hide()
 	elseif newState == M.States.IN_GAME then
     local liveState = sessionState or _G.__SessionAggAccuracy
+
     if liveState.IsTrackerVisible then
 	    in_game_progress_hud.SetVisibility(hud_utils.Visibility.HITTESTINVISIBLE)
     end
