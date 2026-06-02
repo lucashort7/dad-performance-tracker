@@ -161,17 +161,16 @@ local function RegisterCombatHooks()
 						return
 					end
 					local isPerfect = false
+          pcall(function()
+            if self.WasActivatedWithPerfectInputTiming then
+              isPerfect = self:WasActivatedWithPerfectInputTiming()
+            end
+          end)
 					if data.hasParam then
 						if Param1 then
-							isPerfect = Param1:get() or false
+							isPerfect = Param1:get() or isPerfect
 						end
-					else
-						pcall(function()
-							if self.WasActivatedWithPerfectInputTiming then
-								isPerfect = self:WasActivatedWithPerfectInputTiming()
-							end
-						end)
-					end
+          end
 					UpdateGlobalAccuracy(isPerfect, self.MusicTimeActivated or 0.0, abilityKey)
 				end)
 			end)
