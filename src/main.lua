@@ -126,18 +126,6 @@ local function UpdateGlobalAccuracy(isPerfect, musicTime, actionType)
 		state.CurrentAccuracy = (state.PerfectHits / state.TotalActions) * 100.0
 	end
 
-	-- -- Poll Score/Combo to keep state updated even if we die later
-	-- pcall(function()
-	-- 	local PC = UEHelpers.GetPlayerController()
-	-- 	if PC and PC:IsValid() then
-	-- 		local ScoreComp = PC:GetScoreComponent()
-	-- 		if ScoreComp and ScoreComp:IsValid() then
-	-- 			state.TotalScore = ScoreComp:GetCombatScore() or state.TotalScore
-	-- 			state.MaxCombo = ScoreComp:GetMaxComboCount() or state.MaxCombo
-	-- 		end
-	-- 	end
-	-- end)
-
 	state.LastActionWasPerfect = isPerfect
 	state.LastMusicTime = musicTime
 	state.LastActionType = actionType or "Unknown"
@@ -233,11 +221,18 @@ local function GameModeEntryPointHook()
 
       RegisterHook("/Game/Pagoda/Characters/Player/BP_PagodaPlayerController.BP_PagodaPlayerController_C:ReceiveEndPlay", function( self, EndPlayReason  )
         hud_handler.SetState(hud_handler.States.PRE_GAME, state)
-        log.debug("EndPlayReason: " .. tostring(EndPlayReason:get()))
+        -- log.debug("EndPlayReason: " .. tostring(EndPlayReason:get()))
       end)
 
       -- trying to use ``BP_PagodaGameMode_C`` to cover all modes instead of ``BP_InfiniteDisco_C``
-      RegisterHook("/Game/Pagoda/Core/GameModes/BP_PagodaGameMode.BP_PagodaGameMode_C:ResetPlayerAttributesForRespawn", function()
+      RegisterHook("/Game/Pagoda/Core/GameModes/BP_PagodaGameMode.BP_PagodaGameMode_C:ResetPlayerAttributesForRespawn", function( wrappedSelf, ... )
+        local self = wrappedSelf:get()
+        log.debug("InPlaythrough: " .. tostring(self.InPlaythrough))
+        if not self.InPlaythrough then
+          log.debug("Not in `InPlaythrough`! Skipping ResetPlayerAttributesForRespawn hook.")
+          return
+        end
+
 				local innerState = _G.__SessionAggAccuracy
 				-- ALWAYS reset on start gestures to handle retries properly
 				ResetSessionTracker()
@@ -249,17 +244,6 @@ local function GameModeEntryPointHook()
 				log.debug("Gameplay Started/Reset! (Step 4) -> BP_PagodaGameMode_C:ResetPlayerAttributesForRespawn")
       end)
 
-			-- RegisterHook("/Game/Pagoda/Levels/Test/BP_InfiniteDisco.BP_InfiniteDisco_C:InitPlayerAttributes", function()
-			-- 	local innerState = _G.__SessionAggAccuracy
-			-- 	-- ALWAYS reset on start gestures to handle retries properly
-			-- 	ResetSessionTracker()
-			-- 	CaptureSongMetadata()
-			-- 	innerState.CachedPB = history_handler.GetPB(innerState)
-			-- 	hud_handler.SetState(hud_handler.States.IN_GAME, innerState)
-			-- 	log.debug("Gameplay Started/Reset! (Step 4) -> BP_InfiniteDisco_C:InitPlayerAttributes")
-      -- end)
-
-      
 		end)
 
 		rh.Lifecycle = okLifecycle
@@ -313,7 +297,7 @@ LoopAsync(HEARTBEAT_MS, function()
 	end
 	if GameModeEntryPointHook() then
 		state.__setup_hooks = true
-		log.debug("All hooks initialized succesfully!!!")
+		log.info("All hooks initialized succesfully!!!")
 
     pcall(function()
       ExecuteInGameThread(function()

@@ -48,12 +48,12 @@ jobs:
         run: |
           # setup clean staging area
           rm -rf ${{ env.BUILD_DIR }}
-          mkdir -p "${{ env.STAGING_DIR }}/ue4ss/Mods/${{ env.MOD_NAME }}/Scripts/data"
+          mkdir -p "${{ env.STAGING_DIR }}/ue4ss/Mods/${{ env.MOD_NAME }}/Scripts"
           
-          # copy mod source scripts
-          cp -r src/* "${{ env.STAGING_DIR }}/ue4ss/Mods/${{ env.MOD_NAME }}/Scripts/"
+          # copy mod source scripts using dot to ensure correct structure
+          cp -r src/. "${{ env.STAGING_DIR }}/ue4ss/Mods/${{ env.MOD_NAME }}/Scripts/"
           
-          # dynamically generate enabled.txt for auto-loading
+          # dynamically generate enabled file for autoloading
           touch "${{ env.STAGING_DIR }}/ue4ss/Mods/${{ env.MOD_NAME }}/enabled.txt"
 
           # inject all assets directly to zip root
@@ -70,25 +70,44 @@ jobs:
           cd "${{ env.STAGING_DIR }}"
           zip -r "../../$ARTIFACT_NAME" .
           
-          # fix: artifact is actually at repo root/ARTIFACT_NAME, let's move it to BUILD_DIR
           cd ../..
           mv "$ARTIFACT_NAME" "${{ env.BUILD_DIR }}/$ARTIFACT_NAME"
+
+      - name: generate standalone clean zip
+        run: |
+          # define local temporary paths
+          STANDALONE_STAGING="build/staging_standalone/${{ env.MOD_NAME }}"
+          STANDALONE_NAME="${{ env.MOD_NAME }}-STANDALONE-${{ inputs.tag }}.zip"
           
-          echo "artifact-name=$ARTIFACT_NAME" >> "$GITHUB_ENV"
-          echo "artifact-path=${{ env.BUILD_DIR }}/$ARTIFACT_NAME" >> "$GITHUB_ENV"
+          # create clean directory structure for scripts
+          mkdir -p "$STANDALONE_STAGING/Scripts"
+          
+          # copy only source content inside scripts directory
+          cp -r src/. "$STANDALONE_STAGING/Scripts/"
+          
+          # create enabled file at standalone mod root
+          touch "$STANDALONE_STAGING/enabled.txt"
+          
+          # enter staging folder and zip keeping root mod folder
+          cd build/staging_standalone
+          zip -r "../../${{ env.BUILD_DIR }}/$STANDALONE_NAME" "${{ env.MOD_NAME }}"
+          
+          # clean temporary directory used in this step
+          cd ../..
+          rm -rf build/staging_standalone
 
       - name: upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.artifact-name }}
-          path: ${{ env.artifact-path }}
+          name: ${{ env.MOD_NAME }}-Artifacts-${{ inputs.tag }}
+          path: ${{ env.BUILD_DIR }}/*.zip
           retention-days: 7
 
       - name: git tag and push
         if: ${{ !inputs.is-dry-run }}
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.email "github-actions[bot]@://github.com"
           git add ${{ env.CHANGELOG_FILE }}
           git commit -m "chore: release ${{ inputs.tag }}"
           git tag -a ${{ inputs.tag }} -m "release ${{ inputs.tag }}"
@@ -100,7 +119,7 @@ jobs:
         with:
           name: ${{ inputs.tag }}
           tag_name: ${{ inputs.tag }}
-          files: ${{ env.artifact-path }}
+          files: ${{ env.BUILD_DIR }}/*.zip
           body_path: ${{ env.CHANGELOG_FILE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
