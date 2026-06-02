@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.6] - 2026-06-02
+
 ## [1.1.5] - 2026-06-02
 
 ### Added
@@ -31,5 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Accuracy and Combo monitoring.
 - HighScore persistence.
 
-[unreleased]: https://github.com/lucashort7/dad-performance-tracker/compare/v1.1.5...HEAD
+[unreleased]: https://github.com/lucashort7/dad-performance-tracker/compare/v1.1.6...HEAD
+[1.1.6]: https://github.com/lucashort7/dad-performance-tracker/compare/v1.1.5...v1.1.6
 [1.1.5]: https://github.com/lucashort7/dad-performance-tracker/compare/44851ca618e13dcdcbf15e37ade571940b69e559...v1.1.5
