@@ -1,7 +1,7 @@
 local cfg = {}
 
 -- ~log
-cfg.LOG_LEVEL = "info"
+cfg.LOG_LEVEL = "debug"
 
 -- ~timing
 cfg.HUD_UPDATE_INTERVAL_MS = 400
@@ -9,7 +9,7 @@ cfg.HUD_UPDATE_INTERVAL_MS = 400
 --[[
     ============ ~hud cfg ============ 
 --]]
-cfg.HUD_MAIN_ALLIGNMENT = "midbottomright_test" -- 'upper_left'
-cfg.HUD_LABEL_LAYOUT = "friendly" -- Can be "full", "friendly", or "shortname"
+cfg.HUD_MAIN_ALLIGNMENT = "bottomleft" 
+cfg.HUD_LABEL_LAYOUT = "friendly" 
 
 return cfg
