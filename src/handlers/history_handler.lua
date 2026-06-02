@@ -20,7 +20,7 @@ local function _dmp_tbl(o)
   end
 end
 
---- INTERNAL FUNCTION: Centralizes and sanitizes Primary Key (PK) generation
+--- centralizes and sanitizes Primary Key (PK) generation
 local function _getCleanPrimaryKey(session)
 	if session.SongUniqueID and session.SongUniqueID ~= 0 
       and session.SongUniqueID ~= "" and session.SongUniqueID ~= "0" then
@@ -28,8 +28,8 @@ local function _getCleanPrimaryKey(session)
 	end
 
 	if session.AssetPath and session.AssetPath ~= "" then
-		-- Applies the pattern to capture only what comes after the last dot
-		-- Example: "/Game/Pagoda/Maps/Song_Disco.Song_Disco" becomes "Song_Disco"
+		-- applies the pattern to capture only what comes after the last dot
+		-- example: "/Game/Pagoda/Maps/Song_Disco.Song_Disco" becomes "Song_Disco"
 		local clean = session.AssetPath:match("([^.]+)$")
 		if clean and clean ~= "" then
 			return clean
@@ -37,9 +37,12 @@ local function _getCleanPrimaryKey(session)
 		return session.AssetPath
 	end
 
-	if session.SongName and session.SongName ~= "" then
-		return session.SongName
-	end
+  -- PK must be AssetPath or SongUniqueID to ensure consistency;
+  --        SongName is too volatile...
+	-- if session.SongName and session.SongName ~= "" 
+  --     and session.SongName ~= "No Song" then
+	-- 	return session.SongName
+	-- end
 
 	return nil
 end

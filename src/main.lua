@@ -97,11 +97,12 @@ local function UpdateGlobalAccuracy(isPerfect, musicTime, actionType)
 		return
 	end
 
+  -- FIXME: this could trigger false ingame actions like in 'DiveBar'
 	-- FALLBACK: If we are hitting things but not in IN_GAME state, force it now.
-	if hud_handler.CurrentState ~= hud_handler.States.IN_GAME then
-		hud_handler.SetState(hud_handler.States.IN_GAME, state)
-		log.debug("Gameplay Started via Combat Fallback (Step 4)")
-	end
+	-- if hud_handler.CurrentState ~= hud_handler.States.IN_GAME then
+	-- 	hud_handler.SetState(hud_handler.States.IN_GAME, state)
+	-- 	log.debug("Gameplay Started via Combat Fallback (Step 4)")
+	-- end
 
 	if not state.GranularStats[actionType] then
 		state.GranularStats[actionType] = {
@@ -237,15 +238,26 @@ local function GameModeEntryPointHook()
         log.debug("EndPlayReason: " .. tostring(EndPlayReason:get()))
       end)
 
-			RegisterHook("/Game/Pagoda/Levels/Test/BP_InfiniteDisco.BP_InfiniteDisco_C:InitPlayerAttributes", function()
+      -- trying to use ``BP_PagodaGameMode_C`` to cover all modes instead of ``BP_InfiniteDisco_C``
+      RegisterHook("/Game/Pagoda/Core/GameModes/BP_PagodaGameMode.BP_PagodaGameMode_C:ResetPlayerAttributesForRespawn", function()
 				local innerState = _G.__SessionAggAccuracy
 				-- ALWAYS reset on start gestures to handle retries properly
 				ResetSessionTracker()
 				CaptureSongMetadata()
 				innerState.CachedPB = history_handler.GetPB(innerState)
 				hud_handler.SetState(hud_handler.States.IN_GAME, innerState)
-				log.debug("Gameplay Started/Reset! (Step 4) -> BP_InfiniteDisco_C:InitPlayerAttributes")
+				log.debug("Gameplay Started/Reset! (Step 4) -> BP_PagodaGameMode_C:ResetPlayerAttributesForRespawn")
       end)
+
+			-- RegisterHook("/Game/Pagoda/Levels/Test/BP_InfiniteDisco.BP_InfiniteDisco_C:InitPlayerAttributes", function()
+			-- 	local innerState = _G.__SessionAggAccuracy
+			-- 	-- ALWAYS reset on start gestures to handle retries properly
+			-- 	ResetSessionTracker()
+			-- 	CaptureSongMetadata()
+			-- 	innerState.CachedPB = history_handler.GetPB(innerState)
+			-- 	hud_handler.SetState(hud_handler.States.IN_GAME, innerState)
+			-- 	log.debug("Gameplay Started/Reset! (Step 4) -> BP_InfiniteDisco_C:InitPlayerAttributes")
+      -- end)
 
       
 		end)
