@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **In-game HUD:** Fix a bug where was showing wrong PB if didn't found.
+
 ## [1.2.1] - 2026-06-02
 
 ### Added
