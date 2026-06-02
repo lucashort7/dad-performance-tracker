@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Windmill:** New Hook.
 
+### Modified
+
+- **Final Result HUD:** Position on screen now is fixed on top.
+
 ### Fixed
 
 - **Dodge**: Fixed an issue detecting perfect when there wasn't enemies.

@@ -213,7 +213,7 @@ function M.Show(granularStats, sessionSummary)
 		padding = { Left = 40, Top = 20, Right = 40, Bottom = 20 },
 	})
 
-	umg_factory.ApplyAlignment(canvas, border, "top", { X = 100, Y = 60 })
+	umg_factory.ApplyAlignment(canvas, border, "top", { X = 0, Y = 0 })
 
 	hud.Visibility = hud_utils.Visibility.HITTESTINVISIBLE
 	hud:AddToViewport(1000)
