@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-06-02
+
 ### Added
 
 - **Windmill:** New Hook.
@@ -44,5 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Accuracy and Combo monitoring.
 - HighScore persistence.
 
-[unreleased]: https://github.com/lucashort7/dad-performance-tracker/compare/v1.1.6...HEAD
+[unreleased]: https://github.com/lucashort7/dad-performance-tracker/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/lucashort7/dad-performance-tracker/compare/v1.1.6...v1.2.1
 [1.1.6]: https://github.com/lucashort7/dad-performance-tracker/compare/44851ca618e13dcdcbf15e37ade571940b69e559...v1.1.6
