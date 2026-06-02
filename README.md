@@ -16,10 +16,10 @@ A high-performance Lua mod built on the UE4SS framework. This mod provides real-
 
 ## Installation (Plug & Play)
 
-1. **Download** the latest `DiscoTracker-v1.x.x.zip` from the [Releases](https://github.com/lucashort7/DiscoTracker/releases) page.
+1. **Download** the latest `DiscoTracker-vX.Y.Z.zip` from the [Releases](https://github.com/lucashort7/DiscoTracker/releases) page.
 2. **Locate** your game's binary folder. For Steam users:
-   `Dead as Disco Demo > Pagoda > Binaries > Win64`
-3. **Extract** and drag the **`ue4ss/`** folder from the ZIP directly into the `Win64` folder.
+   `Dead as Disco (Demo) > Pagoda > Binaries > Win64`
+3. **Extract** and drag the files from the ZIP directly into the `Win64` folder.
 4. **Launch the game.** The mod will load automatically!
 
 ## Keybinds
@@ -38,10 +38,8 @@ You can customize the visual behavior of the mod by editing the `config.lua` fil
 |---|---|---|
 | `cfg.LOG_LEVEL` | `"info"` | Determines the verbosity of the `UE4SS.log`. Set to `"debug"` or `"trace"` if you are a developer looking for detailed logs. |
 | `cfg.HUD_UPDATE_INTERVAL_MS` | `400` | The refresh rate (in milliseconds) for the live in-game HUD. Lower values update faster but may use slightly more CPU. |
-| `cfg.HUD_MAIN_ALLIGNMENT` | `"bottomright"` | The screen anchor position for the in-game HUD. (Options: `"center"`, `"top"`, `"bottom"`, `"topleft"`, `"topright"`, `"bottomleft"`, `"bottomright"`). |
+| `cfg.HUD_MAIN_ALLIGNMENT` | `"bottomleft"` | The screen anchor position for the in-game HUD. (Options: `"center"`, `"top"`, `"bottom"`, `"topleft"`, `"topright"`, `"bottomleft"`, `"bottomright"`). |
 | `cfg.HUD_LABEL_LAYOUT` | `"friendly"` | The naming convention for tracked abilities. Options: `"full"` (e.g., `GA_Player_Taunt_C`), `"friendly"` (e.g., `DanceMove`), or `"shortname"` (e.g., `DNC`). |
-
-> **Note:** The internal mod name and core timing variables should not be altered as they are critical for the mod's architecture and save system.
 
 ## Troubleshooting
 

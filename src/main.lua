@@ -222,8 +222,7 @@ local function GameModeEntryPointHook()
 					innerState.IsFullCombo = false
           log.debug("isFullCombo: false (Combo broke at " .. 
                       tostring(innerState.LastMusicTime) .. 
-                      "s -> MaxCombo: " .. tostring(innerState.internalMaxCombo) .. ")"
-                    )
+                      "s -> MaxCombo: " .. tostring(innerState.internalMaxCombo) .. ")")
 				end
 			end)
 		end)
@@ -245,7 +244,9 @@ local function GameModeEntryPointHook()
 				ResetSessionTracker()
 				CaptureSongMetadata()
 				innerState.CachedPB = history_handler.GetPB(innerState)
-				hud_handler.SetState(hud_handler.States.IN_GAME, innerState)
+        log.debug("Cached PB on Respawn: " .. (innerState.CachedPB and tostring(innerState.CachedPB.highScore) or "nil"))
+				
+        hud_handler.SetState(hud_handler.States.IN_GAME, innerState)
 				log.debug("Gameplay Started/Reset! (Step 4) -> BP_PagodaGameMode_C:ResetPlayerAttributesForRespawn")
       end)
 
@@ -334,6 +335,8 @@ LoopAsync(cfg.HUD_UPDATE_INTERVAL_MS, function()
 	return false
 end)
 
+
+
 -- ============ KEYBINDS ============
 RegisterKeyBind(Key.F3, function()
 	_G.__SessionAggAccuracy.IsTrackerVisible = not _G.__SessionAggAccuracy.IsTrackerVisible
@@ -347,6 +350,8 @@ RegisterKeyBind(Key.F5, function()
 	_G.__SessionAggAccuracy.IsTrackerVisible = false
   hud_handler.UpdateModStatus(_G.__SessionAggAccuracy)
 end)
+
+
 
 -- ============ DEBUG / SANDBOX KEYBINDS ============
 RegisterKeyBind(Key.F6, function()
