@@ -149,6 +149,8 @@ function M.Update(state)
 			
 			if state.CachedPB and M.summaryControls.PB then
 				M.summaryControls.PB:SetText(umg_factory.ToFText(string.format("%d pts (%.1f%%)", state.CachedPB.highScore or 0, state.CachedPB.bestAcc or 0.0)))
+      else
+        M.summaryControls.PB:SetText(umg_factory.ToFText("---"))
 			end
 		end)
 	end

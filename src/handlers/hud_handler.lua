@@ -19,14 +19,14 @@ M.CurrentState = M.States.PRE_GAME
 --- Global Setup: Recreate everything if needed (Boot/Map Change)
 function M.EnsureUI()
 	if not status_indicator_hud.IsValid() then
-		log.debug("[HUD] Creating status_indicator_hud...")
+		log.trace("[HUD] Creating status_indicator_hud...")
 		status_indicator_hud.Create()
     -- Sync initial status after creation
     M.UpdateModStatus()
 	end
   
 	if not in_game_progress_hud.IsValid() then
-		log.debug("[HUD] Creating in_game_progress_hud...")
+		log.trace("[HUD] Creating in_game_progress_hud...")
 		in_game_progress_hud.Create()
 	end
 	-- Note: ResultsHUD is created on-demand in .Show()
