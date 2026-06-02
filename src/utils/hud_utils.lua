@@ -19,14 +19,15 @@ M.Alignments = {
 	bottom = { anchor = { 0.5, 1 }, align = { 0.5, 1 }, pos = { 0, -10 } },
 	topleft = { anchor = { 0, 0 }, align = { 0, 0 }, pos = { 10, 10 } },
 	topright = { anchor = { 1, 0 }, align = { 1, 0 }, pos = { -10, 10 } },
-	bottomleft = { anchor = { 0, 1 }, align = { 0, 1 }, pos = { 10, -10 } },
+	-- bottomleft = { anchor = { 0, 1 }, align = { 0, 1 }, pos = { 10, -10 } },
+	bottomleft = { anchor = { 0, 0.9 }, align = { 0, 0.9 }, pos = { 9 , -8 } },
 	-- bottomright = { anchor = { 1, 1 }, align = { 1, 1 }, pos = { -10, -10 } },
 	bottomright = { anchor = { 1, 0.85 }, align = { 1, 0.85 }, pos = { -9, -8 } },
 
 	-- only for testing
 	upper_left = { anchor = { 0, 0.25 }, align = { 0, 0.25 }, pos = { 10, 7.5 } },
 	topmidleft_test = { anchor = { 0.25, 0 }, align = { 0.25, 0 }, pos = { 7, 10 } },
-	midbottomleft_test = { anchor = { 0.25, 1 }, align = { 0.25, 1 }, pos = { -7.5, -10 } },
+	midbottomleft_test = { anchor = { 0, 0.9 }, align = { 0, 0.9 }, pos = { 9 , -8 } },
 	midbottomright_test = { anchor = { 1, 0.85 }, align = { 1, 0.85 }, pos = { -9, -8 } },
 }
 

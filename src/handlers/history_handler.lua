@@ -4,7 +4,7 @@ local json = require("utils.json")
 local log = require("utils.log")
 
 -- History file path
-local SAVE_PATH = "./ue4ss/Mods/DiscoTracker/Scripts/data/performance_history.json"
+local SAVE_PATH = "./ue4ss/Mods/dev-DiscoTracker/Scripts/data/performance_history.json"
 local TMP_PATH = SAVE_PATH .. ".tmp"
 
 local function _dmp_tbl(o)
@@ -26,6 +26,11 @@ local function _getCleanPrimaryKey(session)
       and session.SongUniqueID ~= "" and session.SongUniqueID ~= "0" then
 		return tostring(session.SongUniqueID)
 	end
+
+  if session.SongName and session.SongName ~= "" 
+    and session.SongName == "No Song" then
+      return nil
+  end
 
 	if session.AssetPath and session.AssetPath ~= "" then
 		-- applies the pattern to capture only what comes after the last dot
