@@ -71,6 +71,13 @@ M.ABILITIES = {
 		shortName = "DNC",
 		path = _root_hook_path .. "/GA_Player_Taunt.GA_Player_Taunt_C:ExecuteUbergraph_GA_Player_Taunt",
 	},
+  WindMill = {
+		index = 9,
+		fullName = "GA_Attack_Windmill_C",
+		friendlyName = "Windmill",
+		shortName = "WND",
+		path = _root_hook_path .. "/Strong/GA_Attack_Windmill.GA_Attack_Windmill_C:ExecuteUbergraph_GA_Attack_Windmill",
+	},
 }
 
 function M.GetLabel(abilityKey, layoutType)
