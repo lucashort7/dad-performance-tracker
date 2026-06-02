@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Windmill:** New Hook.
+
 ### Fixed
 
 - **Dodge**: Fixed an issue detecting perfect when there wasn't enemies.
+- **History:**: Fixed SAVE_PATH dir.
 
 ## [1.1.6] - 2026-06-02
 
